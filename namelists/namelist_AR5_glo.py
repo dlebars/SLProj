@@ -64,23 +64,23 @@
 # Decomp: Save the decomposition of each total sea level value into the average 
 #         components that form it.
 ################################################################################
-INFO=True
-LOC=False
-IBarE=False
-TEMPf="AR5"
-GRE="IPCC"
-ODYN="IPCC"
-ANT_DYN="IPCC"
-GAM=1
-COMB="IPCC"
-SaveAllSamples=True
-Corr=False
-CorrGT=1
-CorrM="Spearman"
-CorrSMB=False
-CorrDYN=False
-NoU_O=False
-NoU_G=False
-NoU_A=False
-NoU_Gl=False
-Decomp=False
+INFO = True
+LOC = False
+IBarE = False
+TEMPf = 'AR5'
+GRE = 'IPCC'
+ODYN = 'IPCC'
+ANT_DYN = 'IPCC'
+GAM = 1
+COMB = 'IPCC'
+SaveAllSamples = True
+Corr = False
+CorrGT = 1
+CorrM = "Spearman"
+CorrSMB = False
+CorrDYN = False
+NoU_O = False
+NoU_G = False
+NoU_A = False
+NoU_Gl = False
+Decomp = False

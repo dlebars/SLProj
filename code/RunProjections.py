@@ -4,6 +4,8 @@
 import numpy as np
 import pandas as pd
 import mod_main as mm
+import sys
+import os
 
 ##### User defined parameters #################################################
 VER = 1.3             # File version to write in outputs
@@ -13,11 +15,15 @@ er = 0.1              # Convergence parameter, cm difference for the 99th percen
                       #of total ditribution
 
 names_col = ('Keywords', 'Values')
-namelists_dir = '../namelists/'
+# Add the namelist folder to the Python path so that namelists can be read as modules
+namelists_dir = '/../namelists/'
+sys.path.append(os.getcwd() + namelists_dir)
 
-for namelist in ['namelist_AR5_glo.txt', ]:
-    print('### Reading namelist' + namelist)
-    namelist_df = pd.read_csv(namelists_dir + namelist, sep='=', comment='#', names=names_col)
+for namelist_name in ['namelist_AR5_glo', ]:
+    #print('### Reading namelist' + namelist)
+    #namelist_df = pd.read_csv(namelists_dir + namelist, sep='=', comment='#', names=names_col)
+    #namelist_df = namelist_df.set_index('Keywords')
+    #namelist_name = namelist
     
     for SCE in ['rcp85', ]:
-        mm.main(VER, N, MIN_IT, er, namelist_df, SCE)
+        mm.main(VER, N, MIN_IT, er, namelist_name, SCE)
