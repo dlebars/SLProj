@@ -134,6 +134,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     F_gw2   = np.ones(nb_y2)
     
     if nl.LOC:
+        # [Add fingerprints here later XXXX]
         print('Option not supported yet')
         
     ###############################################################################
@@ -251,6 +252,42 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             NormDc = NormD[:, np.newaxis] * ar1
             X_all[0, :, :] = NormDc
 
+        #######################################################################
+        if nl.INFO:
+            print("### Thermal expansion and ocean dynamics #################")
+
+        if nl.COMB == 'IND':
+            CorrGT   = 0 # Force a 0 correlation, even if the CorrGT coefficient has another value
+        elif nl.COMB == 'DEP':
+            CorrGT = 1
+
+        NormDT1 = np.random.normal(0, 1, N)
+        # Build NormDT as a combination of NormD (the distribution of GMST) and an independent
+        # normal distribution.
+        if nl.CorrM == 'Pearson':
+            rhoP  = CorrGT
+        elif nl.CorrM == 'Spearman':
+        # Convert correlation coefficient from Spearman to Pearson
+            rhoP  = 2 * np.sin( np.pi / 6 * CorrGT)
+
+        NormDT = NormD*rhoP + NormDT1*np.sqrt(1 - rhoP^2)
+
+        if nl.LOC:
+            if nl.ODYN == 'KNMI':
+                X_Of = odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, \
+                      lon_E, start_date, ye, SSH_VAR, N, i_ys, GAM, NormDT)
+            elif nl.ODYN == 'CMIP5':
+                X_Of = odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, GAM, NormDT)
+        else:
+            if nl.ODYN == 'KNMI':
+                X_Of = odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, \
+                                      start_date, ye, SSH_VAR, N, i_ys, GAM, NormDT)
+            elif nl.ODYN == 'IPCC':
+                X_Of = odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, GAM, NormDT)
+            elif ODYN == 'CMIP5':
+                X_Of = odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, GAM, NormDT)
+
+            
         END = True
     return
 
