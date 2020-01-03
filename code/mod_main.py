@@ -4,6 +4,9 @@ import pandas as pd
 from scipy.stats import norm
 import glob
 import importlib
+import sys
+sys.path.append('../code')
+import func_odyn as odyn
 
 def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
@@ -102,7 +105,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     #### Parameters to produce PDF
     bin_min = -20.5
-    bin_max = 100.5
+    bin_max = 500.5
     nbin = int(bin_max - bin_min)
     
     ####
@@ -220,7 +223,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     X_tot_pdf     = np.zeros([nb_y2,nbin])
 
     if nl.SaveAllSamples:
-        X_all       = np.zeros([nb_comp,N,nb_yd])
+        X_all       = np.zeros([nb_comp, N, nb_yd])
 
     if nl.Corr:
         nb_el       = nb_comp*(nb_comp-1)/2
@@ -241,6 +244,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Sample a normal distribution to use for temperature
         NormD  = np.random.normal(0, 1, N)
 
+        X_tot = np.zeros([N,nb_y2])
+        
         if nl.COMB:
             # Reorder contribution in ascending order
             NormD   = np.sort(NormD)
@@ -256,6 +261,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.INFO:
             print("### Thermal expansion and ocean dynamics #################")
 
+        CorrGT = nl.CorrGT
         if nl.COMB == 'IND':
             CorrGT   = 0 # Force a 0 correlation, even if the CorrGT coefficient has another value
         elif nl.COMB == 'DEP':
@@ -270,24 +276,59 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Convert correlation coefficient from Spearman to Pearson
             rhoP  = 2 * np.sin( np.pi / 6 * CorrGT)
 
-        NormDT = NormD*rhoP + NormDT1*np.sqrt(1 - rhoP^2)
+        NormDT = NormD*rhoP + NormDT1*np.sqrt(1 - rhoP**2)
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, \
-                      lon_E, start_date, ye, SSH_VAR, N, i_ys, GAM, NormDT)
+                X_Of = odyn.odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, \
+                      lon_E, start_date, ye, SSH_VAR, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'CMIP5':
-                X_Of = odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, GAM, NormDT)
+                X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
         else:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, \
-                                      start_date, ye, SSH_VAR, N, i_ys, GAM, NormDT)
+                X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, \
+                                      start_date, ye, SSH_VAR, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'IPCC':
-                X_Of = odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, GAM, NormDT)
+                X_Of = odyn.odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
             elif ODYN == 'CMIP5':
-                X_Of = odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, GAM, NormDT)
+                X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
 
-            
+        # Compute the pdfs based on the chosen periods
+        for t in range(0, nb_y2):
+            X_O_G_pdf[t,:] = X_O_G_pdf[t,:] + \
+            np.histogram(X_Of[1,:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            X_O_A_pdf[t,:] = X_O_A_pdf[t,:] + \
+            np.histogram(X_Of[2,:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Update X_tot, the sum of all contributions
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_Of   = np.sort(X_Of, 1)
+
+        if nl.NoU_O:
+            for t in range(0, nb_y2):
+                X_tot[:, t] = X_Of[0, :, t].mean()
+        else:
+            X_tot = X_Of[0, :, :]
+
+        if nl.SaveAllSamples:
+            if nl.LOC:
+                X_all[comp,:,:] = X_Of[1, :, ind_d].swapaxes(0,1)
+                comp            = comp + 1
+                X_all[comp,:,:] = X_Of[2, :, ind_d].swapaxes(0,1)
+                comp            = comp + 1
+            else:
+                X_all[comp,:,:] = X_Of[0, :, ind_d].swapaxes(0,1)
+                #X_all[comp,:,:] = np.squeze(X_Of[0:1, :, ind_d])
+                #!!! swapaxes or squeeze are work arround a peculiar Numpy behaviour, see Tests.ipynb
+                comp            = comp + 1
+
+        del(X_Of)
+        del(NormDT1)
+        del(NormDT)
+        
+        
+        
         END = True
     return
 
