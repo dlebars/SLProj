@@ -4,9 +4,10 @@ import pandas as pd
 from scipy.stats import norm
 import glob
 import importlib
-import sys
-sys.path.append('../code')
+#import sys
+#sys.path.append('../code')
 import func_odyn as odyn
+import func_misc as 
 
 def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
@@ -71,9 +72,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     alpha_05 = norm.ppf(0.05)
 
     #### Specific parameters
-    ## GIC: Values of f and p, fitting parameter from formula B.1 (de Vries et al. 2014)
-    f    = np.array([3.02,4.96,5.45,3.44])
-    p    = np.array([0.733,0.685,0.676,0.742])
     ## Antarctic SMB
     Cref     = 1923         # Reference accumulation (Gt/year)
     Delta_C  = 5.1/100      # Increase in accumulation with local temperature (%/degC)
@@ -327,8 +325,52 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         del(NormDT1)
         del(NormDT)
         
+        #######################################################################
+        if nl.IBarE:
+            if nl.INFO:
+                print('### Inverse Barometer effect #########################')
+            # TO DO
         
-        
+        #######################################################################
+        if nl.INFO:
+            print('### Glaciers and Ice Caps (Not including Antarctica) #####')
+
+        if nl.COMB == 'IND':
+            # Redefine NormD to loose correlation
+            NormD  = np.random.normal(0, 1, N)
+
+        #Build the distribution of global temperature for this process
+        Td_gic = misc.TempDist(TGLOBs, Tref_gic, GAM, NormD)
+
+        NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept for correlation
+        X_gic = gic.fett13(Td_gic, NormDs)
+
+        for t in range(0,nb_y2): # Use broadcasting?
+            X_gic[:,t] = X_gic[:,t]*F_gic2[t]
+
+        # Compute the pdfs based on the chosen periods
+        for t in range(0,nb_y2):  # Use broadcasting?
+            X_gic_pdf[t,:]  = X_gic_pdf[t,:] + \
+            np.histogram(X_gic[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Update X_tot, the sum of all contributions
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_gic   = np.sort(X_gic, 0)
+
+        if nl.NoU_Gl:
+            for t in range(0,nb_y2):
+                X_tot[:,t] = X_tot[:,t] + X_gic[:,t].mean()
+        else:
+            X_tot = X_tot + X_gic
+
+        if nl.SaveAllSamples:
+            X_all[comp,:,:] = X_gic[:,ind_d]
+            comp        = comp + 1
+
+        del(X_gic)
+        del(Td_gic)
+            
         END = True
     return
 
