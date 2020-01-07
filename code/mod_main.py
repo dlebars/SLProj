@@ -456,7 +456,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.COMB == 'DEP':
             # Reorder contribution in ascending order
-            X_asmb = np.sort(X_asmb, 1)
+            X_asmb = np.sort(X_asmb, 0)
 
         X_ant_tot  = np.zeros([N,nb_y2])
         if nl.NoU_A:
@@ -488,7 +488,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
             # Reorder contribution in ascending order
-            X_landw = np.sort(X_landw, 1)
+            X_landw = np.sort(X_landw, 0)
 
         X_tot = X_tot + X_landw
     
@@ -546,7 +546,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
             # Reorder contribution in ascending order
-            X_ant = np.sort(X_ant, 1)
+            X_ant = np.sort(X_ant, 0)
 
         if nl.NoU_A:
             for t in range(0, nb_y2):
@@ -568,6 +568,64 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         del(X_ant)
         del(X_ant_tot)
         del(X_asmb)
+        
+        ###############################################################################
+        if nl.INFO:
+            print("### Greenland dynamics ############################################")
+
+        if nl.GRE == 'B19':
+            # This contribution is included in SMB in this case
+            X_gre = np.zeros([N,nb_y2])
+            X_gre = 0
+        else:
+            # First order term (cm/y), equal to half of observations in 2006
+            a1_up_gdyn        = 0.5 * a1_up_g
+            a1_lo_gdyn        = 0.5 * a1_lo_g
+
+            if not nl.CorrDYN:
+                UnifDd = np.random.uniform(0, 1, N)  # Sample a new independent distribution
+
+            if nl.GRE == 'KNMI14':
+                X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, 7.4, 1.7, UnifDd)
+            elif nl.GRE == 'IPCC':
+                if SCE in ['rcp26', 'rcp45']:
+                    Delta_gre_up_2100 = 6.3
+                    Delta_gre_lo_2100 = 1.4
+                elif SCE == 'rcp85':
+                    Delta_gre_up_2100 = 8.5
+                    Delta_gre_lo_2100 = 2
+            X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, Delta_gre_up_2100, 
+                                Delta_gre_lo_2100, UnifDd)
+
+            del(UnifDd)
+            X_gre = X_gre + 0.15  # Add 0.15cm, the contribution from 1995 to 2005
+
+        # Multiply by the fingerprint
+        for t in range(0, nb_y2):
+            X_gre[:,t] = X_gre[:,t]*F_gdyn2[t]
+
+        # Compute the pdfs based on the chosen periods
+        for t in range(0, nb_y2):
+            X_gre_pdf[t,:]  = X_gre_pdf[t,] + \
+            np.histogram(X_gre[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Update X_tot, the sum of all contributions
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_gre = np.sort(X_gre, 0)
+
+        if nl.NoU_G:
+            for t in range(0,nb_y2):
+                X_tot[:,t] = X_tot[:,t] + X_gre[:,t].mean()
+        else:
+            X_tot = X_tot + X_gre
+
+        if nl.SaveAllSamples:
+            X_all[comp,:,:] = X_gre[:,ind_d]
+            comp        = comp + 1
+        del(X_gre)
+    
+    
         
         END = True
     return
