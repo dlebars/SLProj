@@ -1,7 +1,6 @@
 ################################################################################
 # func_gre.py: Define functions to project Greenland contribution to sea level
 ################################################################################
-import func_misc as misc
 import numpy as np
 
 def fett13( fac, Td_g, NormDl, GRE):

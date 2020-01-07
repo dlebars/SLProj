@@ -9,6 +9,7 @@ import func_odyn as odyn
 import func_misc as misc
 import func_gic as gic
 import func_gre as gre
+import func_ant as ant
 
 def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
@@ -73,12 +74,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     alpha_05 = norm.ppf(0.05)
 
     #### Specific parameters
-    ## Antarctic SMB
-    Cref     = 1923         # Reference accumulation (Gt/year)
-    Delta_C  = 5.1/100      # Increase in accumulation with local temperature (%/degC)
-    Delta_Ce = 1.5/100      # Error bar
-    AmpA     = 1.1          # Antarctic amplification of global temperature
-    AmpAe    = 0.2          # Amplification uncertainty
     ## Initial Antarctic dynamics contribution
     a1_up_a           = 0.061    # Unit is cm/y, equal to observations in 2006
     a1_lo_a           = 0.021
@@ -426,7 +421,61 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             
         del(X_gsmb)
     
+        ###############################################################################
+        if nl.INFO:
+            print("### SMB Antarctica ###############################################")
+            
+        if nl.COMB == 'IND':
+            # Redefine NormD to loose correlation
+            NormD  = np.random.normal(0, 1, N)
+
+        if nl.ANT_DYN in ['IPCC', 'KNMI16', 'LEV14', 'SROCC']:
+            #Build the distribution of global temperature for this contributor
+            Td_a = misc.TempDist(TGLOBs, Tref_a, nl.GAM, NormD)
+
+            if nl.CorrSMB:
+                NormDl = NormDs
+            else:
+                NormDl = np.random.normal(0, 1, N)
+
+            X_asmb = ant.ant_smb_ar5(NormDl, fac, Td_a)
+
+            del(Td_a)
+            del(NormDl)
+
+        elif nl.ANT_DYN in ['DC16', 'DC16T', 'B19']:
+            # In these cases the SMB is included in the dynamics
+            X_asmb = np.zeros([N,nb_y2])
+
+        for t in range(0, nb_y2):
+            X_asmb[:,t] = X_asmb[:,t] * F_asmb2[t]
+
+        # Compute the pdfs for the the chosen periods
+        for t in range(0, nb_y2):
+            X_asmb_pdf[t,:]  = X_asmb_pdf[t,:] + \
+            np.histogram(X_asmb[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
     
+        # Update X_tot, the sum of all contributions
+
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_asmb = np.sort(X_asmb, 1)
+
+        X_ant_tot  = np.zeros([N,nb_y2])
+        if nl.NoU_A:
+            for t in range(0, nb_y2): # Loop on the period
+                X_tot[:,t] = X_tot[:,t] + X_asmb[:,t].mean()
+                X_ant_tot[:,t] = X_ant_tot[:,t] + X_asmb[:,t].mean()
+
+        else:
+            X_tot     = X_tot + X_asmb
+            X_ant_tot = X_ant_tot + X_asmb
+
+        if nl.SaveAllSamples:
+            X_all[comp,:,:] = X_asmb[:,ind_d]
+            comp            = comp + 1
+
+        #delete(X_asmb)
         
         
         
