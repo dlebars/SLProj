@@ -3,11 +3,12 @@
 ###############################################################################
 import numpy as np
 
-def fett13(Td_gic, NormDs)
+def fett13(Td_gic, NormDs):
     '''Contribution based on equation 2 of Fettweis et al. 2013 as used in AR5.
     Converts the global temperature to glacier contribution.'''
 
     N = len(NormDs)
+    nb_y2 = Td_gic.shape[1]
     
     # Values of f and p, fitting parameter from formula B.1 (de Vries et al. 2014)
     f    = np.array([3.02,4.96,5.45,3.44])

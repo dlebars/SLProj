@@ -7,7 +7,8 @@ import importlib
 #import sys
 #sys.path.append('../code')
 import func_odyn as odyn
-import func_misc as 
+import func_misc as misc
+import func_gic as gic
 
 def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
@@ -340,7 +341,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             NormD  = np.random.normal(0, 1, N)
 
         #Build the distribution of global temperature for this process
-        Td_gic = misc.TempDist(TGLOBs, Tref_gic, GAM, NormD)
+        Td_gic = misc.TempDist(TGLOBs, Tref_gic, nl.GAM, NormD)
 
         NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept for correlation
         X_gic = gic.fett13(Td_gic, NormDs)

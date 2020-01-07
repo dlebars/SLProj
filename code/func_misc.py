@@ -2,6 +2,8 @@
 # func_misc.py: Miscellaneous functions
 ###############################################################################
 
+import numpy as np
+
 def TempDist(TGLOBs, Tref, GAM, NormD):
     '''Build a distribution of global temperature for a contributor (reference periods 
      are different of each contributors)'''
