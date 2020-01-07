@@ -462,17 +462,14 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.NoU_A:
             for t in range(0, nb_y2): # Loop on the period
                 X_tot[:,t] = X_tot[:,t] + X_asmb[:,t].mean()
-                X_ant_tot[:,t] = X_ant_tot[:,t] + X_asmb[:,t].mean()
-
+                X_ant_tot[:,t] = X_asmb[:,t].mean()
         else:
             X_tot     = X_tot + X_asmb
-            X_ant_tot = X_ant_tot + X_asmb
+            X_ant_tot = X_asmb
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_asmb[:,ind_d]
             comp            = comp + 1
-
-        #delete(X_asmb)
         
         ###############################################################################
         if nl.INFO:
@@ -501,7 +498,76 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
         del(X_landw)
 
+        ###############################################################################
+        if nl.INFO:
+            print("### Antarctic dynamics ###########################################")
+
+        if nl.COMB == 'IND':
+            # Redefine NormD to loose correlation
+            NormD  = np.random.normal(0, 1, N)
+
+        if nl.ANT_DYN == 'IPCC':
+            Unif_AA   = np.random.uniform(0, 1, N)
+            #### 2nd order projection starting from observations and ending between -2 and 18.5 cm
+            X_ant = misc.proj2order(TIME2, a1_up_a, a1_lo_a, 18.5, -2, Unif_AA)
+
+            #### This is the influence of increased SMB on an increase in Antactic dynamics
+            if nl.COMB == 'IND':
+                irg = np.random.permutation(N)
+                for t in range(0, nb_y2):
+                    X_ant[:,t] = X_ant[:,t] - Unif_AA * 0.35 * X_asmb[irg,t]
+            else:
+                for t in range(0,nb_y2):
+                    X_ant[:,t] = X_ant[:,t] - Unif_AA * 0.35 * X_asmb[:,t]
+
+        elif nl.ANT_DYN == 'KNMI16':
+            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+        elif nl.ANT_DYN == 'DC16':
+            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+        elif nl.ANT_DYN == 'DC16T':
+            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+        elif nl.ANT_DYN == 'LEV14':
+            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+        elif nl.ANT_DYN == 'SROCC':
+            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+        elif nl.ANT_DYN == 'B19':
+            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
         
+        X_ant = X_ant + 0.25 # Add 0.25cm, the conribution from 1995 to 2005
+
+        for t in range(0, nb_y2):
+            X_ant[:,t] = X_ant[:,t]*F_adyn2[t]
+
+        # Compute the pdfs based on user defined periods of time
+        for t in range(0, nb_y2):
+            X_ant_pdf[t,:]  = X_ant_pdf[t,:] + \
+            np.histogram(X_ant[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Update X_tot, the sum of all contributions
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_ant = np.sort(X_ant, 1)
+
+        if nl.NoU_A:
+            for t in range(0, nb_y2):
+                X_tot[:,t]     = X_tot[:,t] + X_ant[:,t].mean()
+                X_ant_tot[:,t] = X_ant_tot[:,t] + X_ant[:,y].mean()
+            else:
+                X_tot     = X_tot + X_ant
+                X_ant_tot = X_ant_tot + X_ant
+
+          # Compute the pdfs based on user defined periods of time
+        for t in range(0, nb_y2):
+            X_ant_tot_pdf[t,:]  = X_ant_tot_pdf[t,:] + \
+            np.histogram(X_ant_tot[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            
+        if nl.SaveAllSamples:
+            X_all[comp,:,:] = X_ant[:,ind_d]
+            comp            = comp + 1
+
+        del(X_ant)
+        del(X_ant_tot)
+        del(X_asmb)
         
         END = True
     return
