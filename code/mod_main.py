@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
 import glob
 import importlib
 #import sys
@@ -70,8 +69,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     Aoc = 3.6704e14              # Ocean Area (m2)
     rho_w = 1e3                  # Water density (kg.m-3)
     fac = -1e12 / (Aoc * rho_w)  # Convert Giga tones to m sea level
-    alpha_95 = norm.ppf(0.95)
-    alpha_05 = norm.ppf(0.05)
 
     #### Specific parameters
     ## Initial Antarctic dynamics contribution
@@ -477,6 +474,33 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         #delete(X_asmb)
         
+        ###############################################################################
+        if nl.INFO:
+            print("### Landwater changes ############################################")
+
+        X_landw = misc.landw_ar5(ys, TIME2, N)
+
+        for t in range(0,nb_y2):
+            X_landw[:,t] = X_landw[:,t]*F_gw2[t]
+
+        # Compute the pdfs based on the chosen periods
+        for t in range(0,nb_y2):        # Loop on the period
+            X_landw_pdf[t,:]  = X_landw_pdf[t,:] + \
+            np.histogram(X_landw[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Update X_tot, the sum of all contributions
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_landw = np.sort(X_landw, 1)
+
+        X_tot = X_tot + X_landw
+    
+        if nl.SaveAllSamples:
+            X_all[comp,:,:] = X_landw[:,ind_d]
+            comp        = comp + 1
+    
+        del(X_landw)
+
         
         
         END = True
