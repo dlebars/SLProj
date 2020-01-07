@@ -2,7 +2,6 @@
 # func_odyn.py: Defines functions returning ocean dynamics probabilistic 
 #               contribution to sea level
 ################################################################################
-
 import numpy as np
 import xarray as xr
 from scipy.stats import norm

@@ -1,4 +1,3 @@
-#
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -9,6 +8,7 @@ import importlib
 import func_odyn as odyn
 import func_misc as misc
 import func_gic as gic
+import func_gre as gre
 
 def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
@@ -344,7 +344,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         Td_gic = misc.TempDist(TGLOBs, Tref_gic, nl.GAM, NormD)
 
         NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept for correlation
-        X_gic = gic.fett13(Td_gic, NormDs)
+        X_gic = gic.gic_ar5(Td_gic, NormDs)
 
         for t in range(0,nb_y2): # Use broadcasting?
             X_gic[:,t] = X_gic[:,t]*F_gic2[t]
@@ -371,7 +371,65 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         del(X_gic)
         del(Td_gic)
+        
+        ###############################################################################
+        if nl.INFO:
+            print("### SMB Greenland ################################################")
+
+        if nl.COMB == 'IND':
+            # Redefine NormD to loose correlation
+            NormD  = np.random.normal(0, 1, N)
+
+        if nl.GRE in ['IPCC', 'KNMI14']:
+            #Build the distribution of global temperature for this contributor
+            Td_g  = misc.TempDist(TGLOBs, Tref_g, nl.GAM, NormD)
+            if nl.CorrSMB:
+                NormDl = NormDs
+            else:
+                NormDl = np.random.normal(0, 1, N)
+            X_gsmb = gre.fett13(fac, Td_g, NormDl, nl.GRE)
+            del(NormDl)
+            del(Td_g)
+
+#        elif nl.GRE == 'B19':
+            #Build the percentiles to follow over time in the distributions
+            #can be used to correlate this uncertainty with others.
+#             UnifP_GIS = np.random.uniform(0, 1, N)
+
+#             Td_b  = misc.TempDist(TGLOBs, Tref_b, GAM, NormD)
+#             X_gsmb = Bamber19("GIS", UnifP_GIS, (/a1_lo_g, a1_up_g/), ys, Td_b)
+#             X_gsmb = X_gsmb + 0.3    # Contribution between 1995 and 2005 in mm
+#             del(UnifP_GIS)
+
+        for t in range(0, nb_y2):
+            X_gsmb[:,t] = X_gsmb[:,t] * F_gsmb2[t]
+
+        # Compute the pdfs based on the chosen periods
+        for t in range(0, nb_y2):
+            X_gsmb_pdf[t, :]  = X_gsmb_pdf[t,:] + \
+            np.histogram(X_gsmb[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Update X_tot, the sum of all contributions
+        if nl.COMB == 'DEP':
+            # Reorder contribution in ascending order
+            X_gsmb = np.sort(X_gsmb, 0)
+
+        if nl.NoU_G:
+            for t in range(0, nb_y2):
+                X_tot[:,t] = X_tot[:,t] + X_gsmb[:,t].mean()
+        else:
+            X_tot = X_tot + X_gsmb
+
+        if nl.SaveAllSamples:
+            X_all[comp,:,:] = X_gsmb[:,ind_d]
+            comp            = comp + 1
             
+        del(X_gsmb)
+    
+    
+        
+        
+        
         END = True
     return
 

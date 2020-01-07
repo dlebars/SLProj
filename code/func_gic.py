@@ -3,9 +3,8 @@
 ###############################################################################
 import numpy as np
 
-def fett13(Td_gic, NormDs):
-    '''Contribution based on equation 2 of Fettweis et al. 2013 as used in AR5.
-    Converts the global temperature to glacier contribution.'''
+def gic_ar5(Td_gic, NormDs):
+    '''Contribution based on IPCC AR5 method using four global glacier models'''
 
     N = len(NormDs)
     nb_y2 = Td_gic.shape[1]
