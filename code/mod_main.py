@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.stats as stats
 import pandas as pd
 import glob
 import importlib
@@ -98,6 +99,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     bin_min = -20.5
     bin_max = 500.5
     nbin = int(bin_max - bin_min)
+    bin_centers = np.arange(bin_min + 0.5, bin_max - 0.5 + 1, 1)
     
     ####
     TIME       = np.arange( start_date, ye + 1 )
@@ -625,9 +627,68 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             comp        = comp + 1
         del(X_gre)
     
+        ########################################################################
+        if nl.INFO:
+            print("### Compute PDF of total SLR  #############################")
+
+        # Tot = Thermal exp. and ocean dyn. + Glaciers and ice sheets + Greenland SMB +
+        #       Antractic SMB + land water + antarctic dynamic + greenland dynamics
+
+        # Compute the pdfs based on the chosen periods
+        for t in range(0, nb_y2):
+            X_tot_pdf[t,:]  = X_tot_pdf[t,:] + \
+            np.histogram(X_tot[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+
+        # Check the convergence
+        X_tot_pdf_i = X_tot_pdf/nb_it
+        PDF_cum     = X_tot_pdf_i[-1,:].cumsum()
+        indi        = np.abs(PDF_cum - 99.9).argmin()
+        CONV.append(bin_centers[indi])
+        print('99.9 percentile: ' + str(CONV[-1]))
+        del(indi)
+        del(PDF_cum)
+        del(X_tot_pdf_i)
+
+        if len(CONV) >= 4:
+            dc1 = abs(CONV[-1]-CONV[-2])
+            dc2 = abs(CONV[-2]-CONV[-3])
+            dc3 = abs(CONV[-3]-CONV[-4])
+            if (dc1 <= er) and (dc2 <= er) and (dc3 <= er) and (MIN_IT <= nb_it):
+                END = True
+
+        # Compute the correlations (X_all: nb_comp,nb_SCE,N,nb_yd)
+        # (M_Corr_x: nb_SCE,nb_yd,nb_el)
+        # Could compute a matrix?
+        if nl.Corr:
+            print('Computing correlations')
+            for t in range(0, nb_yd):
+                pl = 0
+                for i in range(0, nb_comp):
+                    for j in range(i+1,nb_comp):
+                        M_Corr_P[t,pl] = M_Corr_P[t,pl] + stats.pearsonr(X_all[i,:,t], X_all[j,:,t])
+                        M_Corr_S[t,pl] = M_Corr_S[t,pl] + stats.spearmanr(X_all[i,:,t], X_all[j,:,t])
+                        pl = pl+1
+
+        X_tot_sel = X_tot[:,ind_d]
+        if nl.Decomp:
+            for t in range(0, nb_yd):
+                for bi in (0, nbin):
+                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) and \
+                                        (X_tot_sel[:,t] <= bin_min+bi+1) )
+                    if len(ind_bin) > 1:
+                        X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + X_all[1:,ind_bin,t].mean(axis=1)
+                    else:
+                        X_Decomp[:,t,bi] = np.NA
+                    del(ind_bin)
+
+        del(X_tot)
+        print("Finished iteration " + str(nb_it))
+        ##### End of main loop
+
+        ### Code preparing the export to NetCDF ??
+        #X_tot_pdf@bin_center = bin_center_f
     
-        
-        END = True
+        END = True # Just for testing
     return
 
 
