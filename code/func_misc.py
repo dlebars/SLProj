@@ -74,3 +74,16 @@ def proj2order(TIME_loc, a1_up, a1_lo, Delta_up_2100, Delta_lo_2100, Unif):
         X_out[:,t] = Unif * Delta_up[t] + (1-Unif)*Delta_lo[t]
 
     return X_out
+
+def printPerc(InPDF, Perc, bin_centers):
+    '''Compute percentiles from a PDF and print.
+     Inputs:
+     InPDF : A pdf to compute
+     Perc  : The percentiles to compute'''
+
+    PDF_cum = InPDF.cumsum(axis=0)*100
+    dimP    = len(Perc)
+    for i in range(0, dimP):
+        print('Percentile: ' + str(Perc[i]))
+        indi =  np.abs(PDF_cum - Perc[i]).argmin()
+        print(bin_centers[indi])

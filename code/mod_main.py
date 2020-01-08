@@ -641,7 +641,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         # Check the convergence
         X_tot_pdf_i = X_tot_pdf/nb_it
-        PDF_cum     = X_tot_pdf_i[-1,:].cumsum()
+        PDF_cum     = X_tot_pdf_i[-1,:].cumsum()*100
         indi        = np.abs(PDF_cum - 99.9).argmin()
         CONV.append(bin_centers[indi])
         print('99.9 percentile: ' + str(CONV[-1]))
@@ -683,14 +683,40 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         del(X_tot)
         print("Finished iteration " + str(nb_it))
-        ##### End of main loop
-
-        ### Code preparing the export to NetCDF ??
-        #X_tot_pdf@bin_center = bin_center_f
     
-        END = True # Just for testing
-    return
+        #END = True # Just for testing
+        ##### End of main loop
+    
+    # Scale PDFs and correlation matrices with number of iterations:
+    X_O_G_pdf     = X_O_G_pdf/nb_it
+    X_O_A_pdf     = X_O_A_pdf/nb_it
+    X_B_pdf       = X_B_pdf/nb_it
+    X_gic_pdf     = X_gic_pdf/nb_it
+    X_gsmb_pdf    = X_gsmb_pdf/nb_it
+    X_asmb_pdf    = X_asmb_pdf/nb_it
+    X_landw_pdf   = X_landw_pdf/nb_it
+    X_ant_pdf     = X_ant_pdf/nb_it
+    X_gre_pdf     = X_gre_pdf/nb_it
+    X_ant_tot_pdf = X_ant_tot_pdf/nb_it
+    X_tot_pdf     = X_tot_pdf/nb_it
+    if nl.Corr:
+        M_Corr_P      = M_Corr_P/nb_it
+        M_Corr_S      = M_Corr_S/nb_it
+    if nl.Decomp:
+        X_Decomp      = X_Decomp/nb_it
 
+    print('### Numbers for the total distribution ###')
+    Perc  = (1,5,10,17,20,50,80,83,90,95,99,99.5,99.9)
+    print("### Scenario " + SCE + " ###")
+    p     = misc.printPerc(X_tot_pdf[-1,:], Perc, bin_centers)
+    
+    if nl.Corr:
+        print("### Spearman correlations ###")
+        print(M_Corr_S[-1,:])
 
+    #print(X_tot_pdf[-1,:].cumsum()*100)
+    
+    ############################################################################
+    # Output the results
 
 
