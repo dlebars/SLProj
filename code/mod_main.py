@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 import pandas as pd
+import xarray as xr
 import glob
 import importlib
 #import sys
@@ -29,6 +30,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     ROOT = '/Users/dewi/Work/Project_ProbSLR/Data_Proj/'
     DIR_T = ROOT+'Data_AR5/Tglobal/'
     DIR_IPCC = ROOT+'Data_AR5/Final_Projections/'
+    DIR_OUT = '../data/'       # Output directory
     
     ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers',    \
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
@@ -684,7 +686,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         del(X_tot)
         print("Finished iteration " + str(nb_it))
     
-        #END = True # Just for testing
+        END = True # Just for testing
         ##### End of main loop
     
     # Scale PDFs and correlation matrices with number of iterations:
@@ -713,10 +715,41 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     if nl.Corr:
         print("### Spearman correlations ###")
         print(M_Corr_S[-1,:])
-
-    #print(X_tot_pdf[-1,:].cumsum()*100)
     
     ############################################################################
-    # Output the results
+    # Output the results: Choice between xarray and Netcdf4 libraries
+    
+    nb_proc = 9+2     # 9 different processes plus total antarctic and total
 
+    MAT_OUTd         = np.zeros([nb_y2, nb_proc, nbin])
+    MAT_OUTd[:,0,:]  = X_O_G_pdf
+    MAT_OUTd[:,1,:]  = X_O_A_pdf
+    MAT_OUTd[:,2,:]  = X_B_pdf
+    MAT_OUTd[:,3,:]  = X_gic_pdf
+    MAT_OUTd[:,4,:]  = X_gsmb_pdf
+    MAT_OUTd[:,5,:]  = X_asmb_pdf
+    MAT_OUTd[:,6,:]  = X_landw_pdf
+    MAT_OUTd[:,7,:]  = X_ant_pdf
+    MAT_OUTd[:,8,:]  = X_gre_pdf
+    MAT_OUTd[:,9,:]  = X_ant_tot_pdf
+    MAT_OUTd[:,10,:] = X_tot_pdf
 
+    proc_coord = np.arange(nb_proc) # Can we have names here?
+    MAT_OUT = xr.DataArray(MAT_OUTd, coords=[TIME2, proc_coord, bin_centers] , 
+                           dims=['time', 'proc', 'bin'])
+
+    MAT_OUT.attrs['units'] = 'cm'
+    MAT_OUT.attrs['long_name'] = 'This variable contains the pdfs of each sea level' + \
+    'contributor and of the total sea level. The list of processes included here is' + \
+    'written in variable ProcessNames'
+
+    if nl.Corr:
+        print('Output for option np.Corr = '+ str(nl.Corr) +' is not supported yet')
+
+    print("### Export data to a NetCDF file ##################################")
+    
+    # Build a DataSet
+    MAT_OUT_ds = xr.Dataset({'MAT_RES': MAT_OUT})
+    
+    NameOutput= DIR_OUT + 'SeaLevelPDF_' + namelist_name + '_' + SCE + '.nc'
+    MAT_OUT_ds.to_netcdf(NameOutput)

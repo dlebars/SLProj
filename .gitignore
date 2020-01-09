@@ -4,3 +4,4 @@ namelists/.ipynb_checkpoints/
 notebooks/
 .ipynb_checkpoints/
 namelists/__pycache__/
+data/
