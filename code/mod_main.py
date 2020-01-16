@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 import glob
 import importlib
+from datetime import datetime
 #import sys
 #sys.path.append('../code')
 import func_odyn as odyn
@@ -710,7 +711,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     print('### Numbers for the total distribution ###')
     Perc  = (1,5,10,17,20,50,80,83,90,95,99,99.5,99.9)
     print("### Scenario " + SCE + " ###")
-    p     = misc.printPerc(X_tot_pdf[-1,:], Perc, bin_centers)
+    p     = misc.perc_df(X_tot_pdf[-1,:], Perc, bin_centers)
+    print(p)
     
     if nl.Corr:
         print("### Spearman correlations ###")
@@ -750,6 +752,33 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     # Build a DataSet
     MAT_OUT_ds = xr.Dataset({'MAT_RES': MAT_OUT})
+    
+    MAT_OUT_ds.attrs['options'] = \
+    "Computations were done with the following options:: " + \
+    "Local computations?" + str(nl.LOC) + \
+    ", include Inverse Barometer effect: "+ str(nl.IBarE) + \
+    ", GMST option: "+ nl.TEMPf + \
+    ", Greenland SMB and dynamics is: "+ nl.GRE + \
+    ", Ocean dynamics is: " + nl.ODYN + \
+    ", Antarctic dynamics is: " + nl.ANT_DYN + \
+    ", Gamma is: " + str(nl.GAM)+ \
+    ", combination of processes: " + nl.COMB + \
+    ", save all samples: " + str(nl.SaveAllSamples) + \
+    ", compute correlation between processes: " + str(nl.Corr) + \
+    ", correlation between GMST and thermal expansion is: "+ str(nl.CorrGT) + \
+    ", measure of correlation between GMST and thermal expansion is:"+ nl.CorrM + \
+    ", correlation between surface mass balances: "+ str(nl.CorrSMB) + \
+    ", correlation between ice sheet dynamics: "+ str(nl.CorrDYN) + \
+    ", remove ocean dynamics uncertainty: "+ str(nl.NoU_O) + \
+    ", remove greenland uncertainty: "+ str(nl.NoU_G) + \
+    ", remove Antarctic uncertainty: "+ str(nl.NoU_A) + \
+    ", remove glaciers and ice caps uncertainty: "+ str(nl.NoU_Gl) + \
+    ", decompose the total sea level into its contributors: "+ str(nl.Decomp)
+    
+    MAT_OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
+    'Probabilistic Sea Level Projection code version ' + str(VER)
+    
+    MAT_OUT_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
     
     NameOutput= DIR_OUT + 'SeaLevelPDF_' + namelist_name + '_' + SCE + '.nc'
     MAT_OUT_ds.to_netcdf(NameOutput)

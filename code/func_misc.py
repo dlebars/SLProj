@@ -3,6 +3,7 @@
 ###############################################################################
 import numpy as np
 from scipy.stats import norm
+import pandas as pd
 
 def TempDist(TGLOBs, Tref, GAM, NormD):
     '''Build a distribution of global temperature for a contributor (reference periods 
@@ -75,15 +76,19 @@ def proj2order(TIME_loc, a1_up, a1_lo, Delta_up_2100, Delta_lo_2100, Unif):
 
     return X_out
 
-def printPerc(InPDF, Perc, bin_centers):
+def perc_df(InPDF, Perc, bin_centers):
     '''Compute percentiles from a PDF and print.
      Inputs:
-     InPDF : A pdf to compute
+     InPDF : A pdf computed from the np.histogram function
      Perc  : The percentiles to compute'''
 
     PDF_cum = InPDF.cumsum(axis=0)*100
     dimP    = len(Perc)
+    perc_ar = np.zeros(dimP)
     for i in range(0, dimP):
-        print('Percentile: ' + str(Perc[i]))
+        #print('Percentile: ' + str(Perc[i]))
         indi =  np.abs(PDF_cum - Perc[i]).argmin()
-        print(bin_centers[indi])
+        perc_ar[i] = bin_centers[indi]
+    perc_df = pd.DataFrame(data= {'percentiles': Perc, 'values': perc_ar})
+    perc_df = perc_df.set_index('percentiles')
+    return perc_df

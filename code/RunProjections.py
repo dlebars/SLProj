@@ -8,7 +8,7 @@ import sys
 import os
 
 ##### User defined parameters #################################################
-VER = 1.3             # File version to write in outputs
+VER = 1.0             # File version to write in outputs
 N = int(1e4)          # Number of sample in all distributions, normally: 1e4 (7*1e5)
 MIN_IT = 50           # Minimum of iterations (bipasses the convergence parameter)
 er = 0.1              # Convergence parameter, cm difference for the 99th percentile 
