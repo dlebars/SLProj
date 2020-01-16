@@ -5,6 +5,46 @@ import numpy as np
 from scipy.stats import norm
 import pandas as pd
 
+def tglob_cmip5(INFO, files, SCE, nb_y, start_date, ye):
+    '''Read the text files of monthly temperature for each CMIP5 model and store
+    yearly averged values in and array'''
+    nb_MOD    = len(files)
+    if INFO:
+        print('Number of models used for scenario '+ SCE + ' : ' + str(nb_MOD))
+        print('Models path: ')
+        print("\n".join(files))
+    
+    TGLOB    = np.zeros([nb_MOD, nb_y])
+    col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
+                 'Sep', 'Oct', 'Nov', 'Dec']
+    for m in range(0,nb_MOD):
+        TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, names=col_names)
+        time     = TEMP['Year'][:]
+        dim_t    = len(time)
+        i_start  = np.where(time == start_date)[0][0]
+        i_end    = np.where(time == ye)[0][0]
+        TGLOB[m, :i_end + 1 - i_start] = TEMP.iloc[i_start:i_end+1, 1:].mean(axis=1)   
+        # !Data is in degree Kelvin
+        #### Issue of missing temperature value for rcp26 after 2100 for this scenario
+        # it is ok to assume it is constant after 2100
+        if (SCE == 'rcp26') and (ye > 2100):
+            i2100 = np.where(time == 2099)
+            print(i2100)
+            TGLOB[m,i2100-i_start : ] = TGLOB[m,i2100-i_start]
+        del(TEMP)
+        del(time)
+    return TGLOB
+
+def Tref(ys, ye, TGLOB, TIME):
+    '''Compute the reference temperature for a specific contributor'''
+    nb_MOD = TGLOB.shape[0]
+    i_ysr  = np.where(TIME == ys)[0][0]
+    i_yer  = np.where(TIME == ye)[0][0]
+    Tref   = np.zeros(nb_MOD)
+    for m in range(0,nb_MOD):
+        Tref[m] = TGLOB[m,i_ysr:i_yer+1].mean()
+    return Tref
+
 def TempDist(TGLOBs, Tref, GAM, NormD):
     '''Build a distribution of global temperature for a contributor (reference periods 
      are different of each contributors)'''

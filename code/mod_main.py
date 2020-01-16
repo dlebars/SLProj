@@ -82,22 +82,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     a1_up_g           = 0.076    # Unit is cm/y, equal to observations in 2006
     a1_lo_g           = 0.043
     
-    #### Reference time period to take the reference global temperature
-    # Reference period for Glaciers and Ice Caps
-    ysr_gic  = 1986          # Start of the reference period
-    yer_gic  = 2005          # End of the reference period
-    # Reference period for Greenland SMB
-    ysr_g  = 1980          # Start of the reference period
-    yer_g  = 1999          # End of the reference period
-    # Reference period for Antarctic SMB
-    ysr_a  = 1985          # Start of the reference period
-    yer_a  = 2005          # End of the reference period
-    # Reference period for Antarctic Dynamics, DC16T option
-    ysr_ad = 2000          # Start of the reference period
-    yer_ad = 2000          # End of the reference period
-    # Reference period for Bamber et al. 2019
-    yr_b = 2000            # Only one year
-    
     #### Parameters to produce PDF
     bin_min = -20.5
     bin_max = 500.5
@@ -109,18 +93,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     TIME2      = np.arange( ys, ye + 1, 1 )
     ind_d      = np.where(TIME2 % 10 == 0)[0] # Select the indices of 2010, 2020... 2100
     nb_yd      = len(ind_d)
-    
-    i_ys       = np.where(TIME == ys)[0][0]
-    i_ye       = np.where(TIME == ye)[0][0]
-    i_ysr_gic  = np.where(TIME == ysr_gic)[0][0]
-    i_yer_gic  = np.where(TIME == yer_gic)[0][0]
-    i_ysr_g    = np.where(TIME == ysr_g)[0][0]
-    i_yer_g    = np.where(TIME == yer_g)[0][0]
-    i_ysr_a    = np.where(TIME == ysr_a)[0][0]
-    i_yer_a    = np.where(TIME == yer_a)[0][0]
-    i_ysr_ad   = np.where(TIME == ysr_ad)[0][0]
-    i_yer_ad   = np.where(TIME == yer_ad)[0][0]
-    i_yr_b     = np.where(TIME == yr_b)[0][0]
     
     #### Read finger prints, some are time dependent so make all of them  time 
     # dependent for easy mutliplication at the end.
@@ -146,6 +118,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         files     = glob.glob(path)
     elif nl.TEMPf == 'AR5':
         files     = []
+        nb_MOD_AR5 = len(MOD)
         for m in range(0, nb_MOD_AR5-1):
             if MOD[m] == 'BCC-CSM1-1':
                 loc_mod = "bcc-csm1-1"
@@ -157,46 +130,20 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 files.append(file_sel[0])
     else:
         print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
-
-    nb_MOD    = len(files)
     
-    if nl.INFO:
-        print('Number of models used for scenario '+ SCE + ' : ' + str(nb_MOD))
-        print('Models path: ')
-        print("\n".join(files))
-    
-    #Read Tglob
-    TGLOB    = np.zeros([nb_MOD,nb_y])
-    Tref_gic = np.zeros(nb_MOD)   # Each process needs a different time anomaly
-    Tref_g   = np.zeros(nb_MOD)
-    Tref_a   = np.zeros(nb_MOD)
-    Tref_ad  = np.zeros(nb_MOD)   # Antarctic dynamics for DC16T option
-    Tref_b   = np.zeros(nb_MOD)   # Reference for Bamber et al. 2019 option
-
-    col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
-                 'Sep', 'Oct', 'Nov', 'Dec']
-    for m in range(0,nb_MOD):
-        TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, names=col_names)
-        time     = TEMP['Year'][:]
-        dim_t    = len(time)
-        i_start  = np.where(time == start_date)[0][0]
-        i_end    = np.where(time == ye)[0][0]
-        TGLOB[m, :i_end + 1 - i_start] = TEMP.iloc[i_start:i_end+1, 1:].mean(axis=1)   #Data in degree Kelvin
-        Tref_gic[m] = TGLOB[m,i_ysr_gic:i_yer_gic+1].mean()
-        Tref_g[m]   = TGLOB[m,i_ysr_g:i_yer_g+1].mean()
-        Tref_a[m]   = TGLOB[m,i_ysr_a:i_yer_a+1].mean()
-        Tref_ad[m]  = TGLOB[m,i_ysr_ad:i_yer_ad+1].mean()
-        Tref_b[m]   = TGLOB[m,i_yr_b].mean()
-        #### Issue of missing temperature value for rcp26 after 2100 for this scenario
-        # it is ok to assume it is constant after 2100
-        if (SCE == 'rcp26') and (ye > 2100):
-            i2100 = np.where(time == 2099)
-            print(i2100)
-            TGLOB[m,i2100-i_start : ] = TGLOB[m,i2100-i_start]
-        del(TEMP)
-        del(time)
+    TGLOB = misc.tglob_cmip5(nl.INFO, files, SCE, nb_y, start_date, ye)
     del(files)
 
+    # Read TGLOB and compute reference temperaure for each model
+    # The first two numbers are the beginning and end of the reference time period
+    # to take the reference global temperature
+    Tref_gic = misc.Tref(1986, 2005, TGLOB, TIME)   # Glaciers and Ice Caps
+    Tref_g   = misc.Tref(1980, 1999, TGLOB, TIME)   # Greenland SMB
+    Tref_a   = misc.Tref(1985, 2005, TGLOB, TIME)   # Antarctic SMB
+    Tref_ad  = misc.Tref(2000, 2000, TGLOB, TIME)   # Antarctic dynamics for DC16T option
+    Tref_b   = misc.Tref(2000, 2000, TGLOB, TIME)   # Reference for Bamber et al. 2019 option
+    
+    i_ys   = np.where(TIME == ys)[0][0]
     TGLOBs = TGLOB[:,i_ys:]
     del(TGLOB)
     
@@ -687,7 +634,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         del(X_tot)
         print("Finished iteration " + str(nb_it))
     
-        END = True # Just for testing
+        #END = True # Just for testing
         ##### End of main loop
     
     # Scale PDFs and correlation matrices with number of iterations:
