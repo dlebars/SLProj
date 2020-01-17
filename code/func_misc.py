@@ -4,6 +4,21 @@
 import numpy as np
 from scipy.stats import norm
 import pandas as pd
+import glob
+
+def temp_path_AR5(MOD, DIR_T, SCE):
+    files     = []
+    nb_MOD_AR5 = len(MOD)
+    for m in range(0, nb_MOD_AR5-1):
+        if MOD[m] == 'BCC-CSM1-1':
+            loc_mod = "bcc-csm1-1"
+        else:
+            loc_mod = MOD[m]
+        path = DIR_T+'global_tas_Amon_'+loc_mod+'_'+SCE+'_r1i1p1.dat'
+        file_sel = glob.glob(path)
+        if file_sel: # Make sure the list is not empty
+            files.append(file_sel[0])
+    return files
 
 def tglob_cmip5(INFO, files, SCE, nb_y, start_date, ye):
     '''Read the text files of monthly temperature for each CMIP5 model and store

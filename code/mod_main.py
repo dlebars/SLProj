@@ -114,20 +114,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     if nl.TEMPf == 'all':
         path = DIR_T+'global_tas_Amon_*_'+SCE+'_r1i1p1.dat'
-        print(path)
+        if nl.INFO:
+            print(path)
         files     = glob.glob(path)
     elif nl.TEMPf == 'AR5':
-        files     = []
-        nb_MOD_AR5 = len(MOD)
-        for m in range(0, nb_MOD_AR5-1):
-            if MOD[m] == 'BCC-CSM1-1':
-                loc_mod = "bcc-csm1-1"
-            else:
-                loc_mod = MOD[m]
-            path = DIR_T+'global_tas_Amon_'+loc_mod+'_'+SCE+'_r1i1p1.dat'
-            file_sel = glob.glob(path)
-            if file_sel: # Make sure the lits is not empty
-                files.append(file_sel[0])
+        files = misc.temp_path_AR5(MOD, DIR_T, SCE)
     else:
         print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
     
@@ -175,7 +166,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
     if nl.Decomp:
         X_Decomp = np.zeros([nb_comp-1,nb_yd,nbin])
-
     
     while not END:
         nb_it = nb_it + 1
