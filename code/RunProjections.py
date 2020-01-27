@@ -19,7 +19,7 @@ names_col = ('Keywords', 'Values')
 namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
-for namelist_name in ['namelist_AR5_glo', ]:
+for namelist_name in ['AR5_glo', ]:
     #print('### Reading namelist' + namelist)
     #namelist_df = pd.read_csv(namelists_dir + namelist, sep='=', comment='#', names=names_col)
     #namelist_df = namelist_df.set_index('Keywords')

@@ -6,3 +6,4 @@ notebooks/Tests.ipynb
 namelists/__pycache__/
 data/
 ref_results/
+outputs/

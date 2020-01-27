@@ -26,16 +26,18 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 - Iverse barometer effect 
     """
     
-    nl = importlib.import_module(namelist_name)
+    nl = importlib.import_module('namelist_'+namelist_name)
 
     ROOT = '/Users/dewi/Work/Project_ProbSLR/Data_Proj/'
     DIR_T = ROOT+'Data_AR5/Tglobal/'
     DIR_IPCC = ROOT+'Data_AR5/Final_Projections/'
-    DIR_OUT = '../data/'       # Output directory
+    DIR_OUT = '../outputs/'       # Output directory
     
     ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers',    \
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
                  'Greenland dynamics', 'sum anta.', 'Total']
+    # Percentiles to print at run time
+    Perc  = (1,5,10,17,20,50,80,83,90,95,99,99.5,99.9)
     
     if nl.SaveAllSamples:
         if nl.LOC:  # Number of components, used to compute correlations efficently.
@@ -439,7 +441,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             comp        = comp + 1
     
         del(X_landw)
-
+        
         ###############################################################################
         if nl.INFO:
             print("### Antarctic dynamics ###########################################")
@@ -494,9 +496,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             for t in range(0, nb_y2):
                 X_tot[:,t]     = X_tot[:,t] + X_ant[:,t].mean()
                 X_ant_tot[:,t] = X_ant_tot[:,t] + X_ant[:,y].mean()
-            else:
-                X_tot     = X_tot + X_ant
-                X_ant_tot = X_ant_tot + X_ant
+        else:
+            X_tot     = X_tot + X_ant
+            X_ant_tot = X_ant_tot + X_ant
 
           # Compute the pdfs based on user defined periods of time
         for t in range(0, nb_y2):
@@ -646,7 +648,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         X_Decomp      = X_Decomp/nb_it
 
     print('### Numbers for the total distribution ###')
-    Perc  = (1,5,10,17,20,50,80,83,90,95,99,99.5,99.9)
     print("### Scenario " + SCE + " ###")
     p     = misc.perc_df(X_tot_pdf[-1,:], Perc, bin_centers)
     print(p)
@@ -674,7 +675,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     MAT_OUTd[:,10,:] = X_tot_pdf
 
     proc_coord = np.arange(nb_proc) # Can we have names here?
-    MAT_OUT = xr.DataArray(MAT_OUTd, coords=[TIME2, proc_coord, bin_centers] , 
+    MAT_OUT = xr.DataArray(MAT_OUTd, coords=[TIME2, ProcessNames, bin_centers] , 
                            dims=['time', 'proc', 'bin'])
 
     MAT_OUT.attrs['units'] = 'cm'
@@ -718,4 +719,4 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     MAT_OUT_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
     
     NameOutput= DIR_OUT + 'SeaLevelPDF_' + namelist_name + '_' + SCE + '.nc'
-    MAT_OUT_ds.to_netcdf(NameOutput)
+    MAT_OUT_ds.to_netcdf(NameOutput) #mode='a' to append or overwrite
