@@ -33,7 +33,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     DIR_IPCC = ROOT+'Data_AR5/Final_Projections/'
     DIR_OUT = '../outputs/'       # Output directory
     
-    if LOC:
+    if nl.LOC:
         DIR_F       = ROOT+'Data_AR5/Fingerprints/'
         DIR_IBE     = ROOT+'Data_AR5/InvertedBarometer/1x1_reg/'
         DIR_IBEmean = ROOT+'Data_AR5/InvertedBarometer/globalmeans_from_1x1_glob/'
@@ -47,14 +47,14 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Point of interest (Netherlands), used for local computations:
         lat_Neth = 53
         lon_Neth = 5
-        if ODYN == 'KNMI':
+        if nl.ODYN == 'KNMI':
             DIR_O       = ROOT + 'Data_AR5/Ocean/1x1_reg/'
-        elif ODYN == 'IPCC':
+        elif nl.ODYN == 'IPCC':
             sys.exit('ERROR: This option of ocean dynamics can only be used for' + \
                      ' global computations')
 
     else:
-        if ODYN == 'KNMI':
+        if nl.ODYN == 'KNMI':
             DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
 
     
@@ -69,8 +69,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             NameComponents = ["Glob. temp.", "Glob. thermal exp.", "Local ocean", \
                               "Barometer effect", "Glaciers", "Green. SMB", \
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
-            print("!!! Warning: This combination of SaveAllSamples = "+nl.SaveAllSamples+ \
-                  " and LOC:"+nl.LOC+" hasn't been tested")
+            print("!!! Warning: This combination of SaveAllSamples = "+str(nl.SaveAllSamples)+ \
+                  " and LOC:"+str(nl.LOC)+" hasn't been tested")
         else:
             NameComponents = ["Glob. temp.", "Thermal exp.", "Glaciers", "Green. SMB", \
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
@@ -142,46 +142,25 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         # Read fingerprint for Glaciers and Ice Caps
         f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc')
-        lat_gic    = f_gic.latitude #tofloat?
-        lon_gic    = f_gic.longitude
-        finger_gic = f_gic.RSL
-        #finger_gic@_FillValue = 0 # Necessary?
-        F_gic      = finger1D(lat_Neth, lon_Neth, lat_gic, lon_gic, finger_gic) #!!! TO DO
+        F_gic      = finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
+                              f_gic.RSL)
         F_gic2[jfs:jfe] =  F_gic[ifs:ife]/100 # Convert from % to fraction
 
-        del(f_gic)
-        del(lat_gic)
-        del(lon_gic)
-        del(finger_gic)
-        del(TIME_F)
+        del(f_gic, TIME_F)
 
         f_ic        = xr.open_dataset(DIR_F+'Relative_icesheets_reg.nc')
         lat_ic      = f_ic.latitude #tofloat?
         lon_ic      = f_ic.longitude
-        finger_gsmb = f_ic.SMB_GRE
-        #finger_gsmb@_FillValue = 0
-        finger_asmb = f_ic.SMB_ANT
-        #finger_asmb@_FillValue = 0
-        finger_gdyn = f_ic.DYN_GRE
-        #finger_gdyn@_FillValue = 0
-        finger_adyn = f_ic.DYN_ANT
-        #finger_adyn@_FillValue = 0
-        F_gsmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_gsmb)
+        F_gsmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_GRE)
         F_gsmb2[jfs:jfe]  =  F_gsmb/100
-        F_asmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_asmb)
+        F_asmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_ANT)
         F_asmb2[jfs:jfe]  =  F_asmb/100
-        F_gdyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_gdyn)
+        F_gdyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_GRE)
         F_gdyn2[jfs:jfe]  =  F_gdyn/100
-        F_adyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_adyn)
+        F_adyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_ANT)
         F_adyn2[jfs:jfe]  =  F_adyn/100
 
-        del(f_ic)
-        del(lat_ic)
-        del(lon_ic)
-        del(finger_gsmb)
-        del(finger_asmb)
-        del(finger_gdyn)
-        del(finger_adyn)
+        del(f_ic, lat_ic, lon_ic)
 
         f_gw       = xr.open_dataset(DIR_F+'Relative_GROUNDWATER_reg.nc')
         lat_gw     = f_gw.latitude #tofloat?
@@ -820,4 +799,5 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     MAT_OUT_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
     
     NameOutput= DIR_OUT + 'SeaLevelPDF_' + namelist_name + '_' + SCE + '.nc'
+    os.remove(NameOutput)
     MAT_OUT_ds.to_netcdf(NameOutput) #mode='a' to append or overwrite

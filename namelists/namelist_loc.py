@@ -19,7 +19,7 @@
 # ODYN: Option for Ocean Dynamics
 # Possible choices: "IPCC" can only be used for global analysis (read file 
 #                   distributed by AR5)
-#                   "KNMI" use data from KNMI14 scenaios. Can be used for both 
+#                   "KNMI" use data from KNMI14 scenarios. Can be used for both 
 #                   local and global but only for RCP4.5 and RCP.8.5. For global
 #                   "IPCC" option is preferable.
 #                   "CMIP5" uses data computed directly from the CMIP5 database.
@@ -64,23 +64,23 @@
 # Decomp: Save the decomposition of each total sea level value into the average 
 #         components that form it.
 ################################################################################
-INFO=True
-LOC=False
-IBarE=False
-TEMPf="AR5"
-GRE="IPCC"
-ODYN="IPCC"
-ANT_DYN="IPCC"
-GAM=1
-COMB="IPCC"
-SaveAllSamples=True
-Corr=False
-CorrGT=1
-CorrM="Spearman"
-CorrSMB=False
-CorrDYN=False
-NoU_O=False
-NoU_G=False
-NoU_A=False
-NoU_Gl=False
-Decomp=False
+INFO = True
+LOC = True
+IBarE = False
+TEMPf = 'AR5'
+GRE = 'IPCC'
+ODYN = 'KNMI'
+ANT_DYN = 'IPCC'
+GAM = 1
+COMB = 'IPCC'
+SaveAllSamples = False
+Corr = False
+CorrGT = 1
+CorrM = "Spearman"
+CorrSMB = False
+CorrDYN = False
+NoU_O = False
+NoU_G = False
+NoU_A = False
+NoU_Gl = False
+Decomp = False

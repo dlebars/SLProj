@@ -148,3 +148,28 @@ def perc_df(InPDF, Perc, bin_centers):
     perc_df = perc_df.set_index('percentiles')
     return perc_df
 
+def finger1D(lats, lons, lat1D, lon1D, fingerprint):
+    '''Select a fingerprint value at a lat/lon point from 2D or 3D array'''
+    dim_f = fingerprint.shape
+    ndim  = len(dim_f)
+    if ndim == 2:
+        output = np.zeros(1)
+        mask2D = np.where(fingerprint == 0, 0, 1)
+    elif ndim == 3:
+        output = np.zeros(dim_f[0])
+        mask2D = np.where(fingerprint[1,:,:] == 0, 0, 1)
+
+    lon_ind = np.abs(lon1D - lons).argmin()
+    lat_ind = np.abs(lat1D - lats).argmin()
+    lon_dist, lat_dist = np.meshgrid(np.arange(dim_f[-1]) - np.asscalar(lon_ind), 
+                                np.arange(dim_f[-2]) - np.asscalar(lat_ind))
+    tot_dist = np.abs(lon_dist) + np.abs(lat_dist)
+    tot_dist = np.where(mask2D != 0, tot_dist, tot_dist.max() +1 )
+    ind = np.unravel_index(np.argmin(tot_dist, axis=None), tot_dist.shape)
+
+    if ndim == 2:
+        output = fingerprint[ind]
+    elif ndim == 3:
+        output = fingerprint[:,ind]
+
+    return output
