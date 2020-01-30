@@ -5,7 +5,7 @@ import xarray as xr
 import glob
 import importlib
 from datetime import datetime
-#import sys
+import sys
 #sys.path.append('../code')
 import func_odyn as odyn
 import func_misc as misc
@@ -32,6 +32,31 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     DIR_T = ROOT+'Data_AR5/Tglobal/'
     DIR_IPCC = ROOT+'Data_AR5/Final_Projections/'
     DIR_OUT = '../outputs/'       # Output directory
+    
+    if LOC:
+        DIR_F       = ROOT+'Data_AR5/Fingerprints/'
+        DIR_IBE     = ROOT+'Data_AR5/InvertedBarometer/1x1_reg/'
+        DIR_IBEmean = ROOT+'Data_AR5/InvertedBarometer/globalmeans_from_1x1_glob/'
+
+        # Box of interest, used for local computations:
+        lat_N = 60    # Original box from Hylke: 51-60N, -3.5,7.5E
+        lat_S = 51
+        lon_W = -3.5
+        lon_E = 7.5
+
+        # Point of interest (Netherlands), used for local computations:
+        lat_Neth = 53
+        lon_Neth = 5
+        if ODYN == 'KNMI':
+            DIR_O       = ROOT + 'Data_AR5/Ocean/1x1_reg/'
+        elif ODYN == 'IPCC':
+            sys.exit('ERROR: This option of ocean dynamics can only be used for' + \
+                     ' global computations')
+
+    else:
+        if ODYN == 'KNMI':
+            DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
+
     
     ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers',    \
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
@@ -107,8 +132,84 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     F_gw2   = np.ones(nb_y2)
     
     if nl.LOC:
-        # [Add fingerprints here later XXXX]
-        print('Option not supported yet')
+        FPs    = 1986 # The fingerprints start in 1986 and end in 2100,
+        FPe    = 2100 # but do not have a useful time vector so we create one here
+        TIME_F = np.arange(FPs,FPe+1)
+        ifs    = np.abs(ys - TIME_F).argmin()
+        ife    = np.abs(ye - TIME_F).argmin()
+        jfs    = np.abs(FPs - TIME2).argmin()
+        jfe    = np.abs(FPe - TIME2).argmin()
+
+        # Read fingerprint for Glaciers and Ice Caps
+        f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc')
+        lat_gic    = f_gic.latitude #tofloat?
+        lon_gic    = f_gic.longitude
+        finger_gic = f_gic.RSL
+        #finger_gic@_FillValue = 0 # Necessary?
+        F_gic      = finger1D(lat_Neth, lon_Neth, lat_gic, lon_gic, finger_gic) #!!! TO DO
+        F_gic2[jfs:jfe] =  F_gic[ifs:ife]/100 # Convert from % to fraction
+
+        del(f_gic)
+        del(lat_gic)
+        del(lon_gic)
+        del(finger_gic)
+        del(TIME_F)
+
+        f_ic        = xr.open_dataset(DIR_F+'Relative_icesheets_reg.nc')
+        lat_ic      = f_ic.latitude #tofloat?
+        lon_ic      = f_ic.longitude
+        finger_gsmb = f_ic.SMB_GRE
+        #finger_gsmb@_FillValue = 0
+        finger_asmb = f_ic.SMB_ANT
+        #finger_asmb@_FillValue = 0
+        finger_gdyn = f_ic.DYN_GRE
+        #finger_gdyn@_FillValue = 0
+        finger_adyn = f_ic.DYN_ANT
+        #finger_adyn@_FillValue = 0
+        F_gsmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_gsmb)
+        F_gsmb2[jfs:jfe]  =  F_gsmb/100
+        F_asmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_asmb)
+        F_asmb2[jfs:jfe]  =  F_asmb/100
+        F_gdyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_gdyn)
+        F_gdyn2[jfs:jfe]  =  F_gdyn/100
+        F_adyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, finger_adyn)
+        F_adyn2[jfs:jfe]  =  F_adyn/100
+
+        del(f_ic)
+        del(lat_ic)
+        del(lon_ic)
+        del(finger_gsmb)
+        del(finger_asmb)
+        del(finger_gdyn)
+        del(finger_adyn)
+
+        f_gw       = xr.open_dataset(DIR_F+'Relative_GROUNDWATER_reg.nc')
+        lat_gw     = f_gw.latitude #tofloat?
+        lon_gw     = f_gw.longitude
+        finger_gw  = f_gw.GROUND
+        #finger_gw@_FillValue = 0
+        F_gw       = finger1D(lat_Neth, lon_Neth, lat_gw, lon_gw, finger_gw)
+        F_gw2[jfs:jfe]  =  F_gw[ifs:ife]/100
+
+        del(f_gw)
+        del(lat_gw)
+        del(lon_gw)
+        del(finger_gw)
+
+        # Extend the values of the fingerprints after 2100:
+        if jfe < (nb_y2-1):
+            print('Extending fingerprints using last available value')
+            F_gic2[jfe+1:] = F_gic2[jfe]
+            F_gsmb2[jfe+1:] = F_gsmb2[jfe]
+            F_asmb2[jfe+1:] = F_asmb2[jfe]
+            F_gdyn2[jfe+1:] = F_gdyn2[jfe]
+            F_adyn2[jfe+1:] = F_adyn2[jfe]
+            F_gw2[jfe+1:] = F_gw2[jfe]
+
+        del(ifs)
+        del(ife)
+        del(jfs)
+        del(jfe)
         
     ###############################################################################
     if nl.INFO:
