@@ -141,8 +141,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         jfe    = np.abs(FPe - TIME2).argmin()
 
         # Read fingerprint for Glaciers and Ice Caps
-        f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc')
-        F_gic      = finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
+        f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', decode_times=False)
+        F_gic      = misc.finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
         F_gic2[jfs:jfe] =  F_gic[ifs:ife]/100 # Convert from % to fraction
 
@@ -151,23 +151,23 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         f_ic        = xr.open_dataset(DIR_F+'Relative_icesheets_reg.nc')
         lat_ic      = f_ic.latitude #tofloat?
         lon_ic      = f_ic.longitude
-        F_gsmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_GRE)
+        F_gsmb      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_GRE)
         F_gsmb2[jfs:jfe]  =  F_gsmb/100
-        F_asmb      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_ANT)
+        F_asmb      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_ANT)
         F_asmb2[jfs:jfe]  =  F_asmb/100
-        F_gdyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_GRE)
+        F_gdyn      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_GRE)
         F_gdyn2[jfs:jfe]  =  F_gdyn/100
-        F_adyn      = finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_ANT)
+        F_adyn      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_ANT)
         F_adyn2[jfs:jfe]  =  F_adyn/100
 
         del(f_ic, lat_ic, lon_ic)
 
-        f_gw       = xr.open_dataset(DIR_F+'Relative_GROUNDWATER_reg.nc')
+        f_gw       = xr.open_dataset(DIR_F+'Relative_GROUNDWATER_reg.nc', decode_times=False)
         lat_gw     = f_gw.latitude #tofloat?
         lon_gw     = f_gw.longitude
         finger_gw  = f_gw.GROUND
         #finger_gw@_FillValue = 0
-        F_gw       = finger1D(lat_Neth, lon_Neth, lat_gw, lon_gw, finger_gw)
+        F_gw       = misc.finger1D(lat_Neth, lon_Neth, lat_gw, lon_gw, finger_gw)
         F_gw2[jfs:jfe]  =  F_gw[ifs:ife]/100
 
         del(f_gw)
