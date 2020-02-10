@@ -59,7 +59,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
 
     
-    ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers',    \
+    ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers', \
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
                  'Greenland dynamics', 'sum anta.', 'Total']
     # Percentiles to print at run time
@@ -80,7 +80,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     #List of model names
     MOD = ["ACCESS1-0","BCC-CSM1-1","CanESM2","CNRM-CM5","CSIRO-Mk3-6-0","GFDL-ESM2G", \
         "GFDL-ESM2M","GISS-E2-R","HadGEM2-CC","HadGEM2-ES","inmcm4","IPSL-CM5A-LR", \
-        "IPSL-CM5A-MR","MIROC5","MIROC-ESM-CHEM","MIROC-ESM","MPI-ESM-LR","MPI-ESM-MR", \
+        "IPSL-CM5A-MR","MIROC5","MIROC-ESM-CHEM","MIROC-ESM","MPI-ESM-LR","MPI-ESM-MR",\
         "MRI-CGCM3","NorESM1-ME","NorESM1-M"]
     nb_MOD_AR5 = len(MOD)
     
@@ -145,7 +145,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', decode_times=False)
         F_gic      = misc.finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
-        F_gic2[jfs:jfe] =  F_gic[ifs:ife]/100 # Convert from % to fraction
+        F_gic2[jfs:jfe+1] =  F_gic[ifs:ife+1]/100 # Convert from % to fraction
 
         del(f_gic, TIME_F)
 
@@ -153,13 +153,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         lat_ic      = f_ic.latitude #tofloat?
         lon_ic      = f_ic.longitude
         F_gsmb      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_GRE)
-        F_gsmb2[jfs:jfe]  =  F_gsmb/100
+        F_gsmb2[jfs:jfe+1]  =  F_gsmb/100
         F_asmb      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_ANT)
-        F_asmb2[jfs:jfe]  =  F_asmb/100
+        F_asmb2[jfs:jfe+1]  =  F_asmb/100
         F_gdyn      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_GRE)
-        F_gdyn2[jfs:jfe]  =  F_gdyn/100
+        F_gdyn2[jfs:jfe+1]  =  F_gdyn/100
         F_adyn      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_ANT)
-        F_adyn2[jfs:jfe]  =  F_adyn/100
+        F_adyn2[jfs:jfe+1]  =  F_adyn/100
 
         del(f_ic, lat_ic, lon_ic)
 
@@ -169,7 +169,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         finger_gw  = f_gw.GROUND
         #finger_gw@_FillValue = 0
         F_gw       = misc.finger1D(lat_Neth, lon_Neth, lat_gw, lon_gw, finger_gw)
-        F_gw2[jfs:jfe]  =  F_gw[ifs:ife]/100
+        F_gw2[jfs:jfe+1]  =  F_gw[ifs:ife+1]/100
 
         del(f_gw)
         del(lat_gw)
@@ -190,6 +190,21 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         del(ife)
         del(jfs)
         del(jfe)
+        
+        if nl.INFO:
+            print('Check all fingerprint values:')
+            print('Glaciers and ice caps (F_gic2):')
+            print(F_gic2)
+            print('Greenland SMB (F_gsmb2):')
+            print(F_gsmb2)
+            print('Antarctic SMB (F_asmb2):')
+            print(F_asmb2)
+            print('Greenland dynamics (F_gdyn2):')
+            print(F_gdyn2)
+            print('Antarctic dynamics (F_adyn2):')
+            print(F_adyn2)
+            print('Groundwater change (F_gw2):')
+            print(F_gw2)
         
     ###############################################################################
     if nl.INFO:
@@ -688,8 +703,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 pl = 0
                 for i in range(0, nb_comp):
                     for j in range(i+1,nb_comp):
-                        M_Corr_P[t,pl] = M_Corr_P[t,pl] + stats.pearsonr(X_all[i,:,t], X_all[j,:,t])
-                        M_Corr_S[t,pl] = M_Corr_S[t,pl] + stats.spearmanr(X_all[i,:,t], X_all[j,:,t])
+                        M_Corr_P[t,pl] = M_Corr_P[t,pl] + \
+                        stats.pearsonr(X_all[i,:,t], X_all[j,:,t])
+                        M_Corr_S[t,pl] = M_Corr_S[t,pl] + \
+                        stats.spearmanr(X_all[i,:,t], X_all[j,:,t])
                         pl = pl+1
 
         X_tot_sel = X_tot[:,ind_d]
@@ -699,7 +716,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                     ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) and \
                                         (X_tot_sel[:,t] <= bin_min+bi+1) )
                     if len(ind_bin) > 1:
-                        X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + X_all[1:,ind_bin,t].mean(axis=1)
+                        X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
+                        X_all[1:,ind_bin,t].mean(axis=1)
                     else:
                         X_Decomp[:,t,bi] = np.NA
                     del(ind_bin)
@@ -800,5 +818,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     MAT_OUT_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
     
     NameOutput= DIR_OUT + 'SeaLevelPDF_' + namelist_name + '_' + SCE + '.nc'
-    os.remove(NameOutput)
+    if os.path.isfile(NameOutput):
+        os.remove(NameOutput)
     MAT_OUT_ds.to_netcdf(NameOutput) #mode='a' to append or overwrite

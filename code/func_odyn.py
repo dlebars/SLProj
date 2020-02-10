@@ -34,7 +34,8 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_dat
         nb_y_loop = i_end - i_start + 1
         if nb_y_loop == nb_y:
             MAT[m,:] = SSH.mean(axis=2).mean(axis=1)
-            #RQ: No scaling depending on the area, gives more weight to the southern cell
+            #RQ: No scaling depending on the area, gives more weight to the southern
+            #cell
             MAT_G[m,:] = fi[VAR][i_start:i_end+1,0,0]
         else:
             MAT[m, :nb_y-1] = SSH.mean(axis=2).mean(axis=1)

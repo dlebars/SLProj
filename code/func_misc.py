@@ -150,7 +150,8 @@ def perc_df(InPDF, Perc, bin_centers):
 
 def finger1D(lats, lons, lat1D, lon1D, fingerprint):
     '''Select a fingerprint value at a lat/lon point from 2D or 3D array. Make 
-    sure to select a point that is not on land otherwise the fingerprint value it 0 there.'''
+    sure to select a point that is not on land otherwise the fingerprint value 
+    it 0 there.'''
     dim_f = fingerprint.shape
     ndim  = len(dim_f)
     if ndim == 2:
