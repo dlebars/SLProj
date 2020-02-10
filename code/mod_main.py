@@ -6,6 +6,7 @@ import glob
 import importlib
 from datetime import datetime
 import sys
+import os
 #sys.path.append('../code')
 import func_odyn as odyn
 import func_misc as misc
@@ -28,7 +29,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     nl = importlib.import_module('namelist_'+namelist_name)
 
-    ROOT = '/Users/dewi/Work/Project_ProbSLR/Data_Proj/'
+    ROOT = '/Users/dewilebars/Projects/Project_ProbSLR/Data_Proj/'
     DIR_T = ROOT+'Data_AR5/Tglobal/'
     DIR_IPCC = ROOT+'Data_AR5/Final_Projections/'
     DIR_OUT = '../outputs/'       # Output directory
@@ -607,7 +608,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             a1_lo_gdyn        = 0.5 * a1_lo_g
 
             if not nl.CorrDYN:
-                UnifDd = np.random.uniform(0, 1, N)  # Sample a new independent distribution
+                UnifDd = np.random.uniform(0, 1, N)  # Sample a new independent distrib.
 
             if nl.GRE == 'KNMI14':
                 X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, 7.4, 1.7, UnifDd)

@@ -19,11 +19,7 @@ names_col = ('Keywords', 'Values')
 namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
-for namelist_name in ['loc', ]:
-    #print('### Reading namelist' + namelist)
-    #namelist_df = pd.read_csv(namelists_dir + namelist, sep='=', comment='#', names=names_col)
-    #namelist_df = namelist_df.set_index('Keywords')
-    #namelist_name = namelist
+for namelist_name in ['loc', ]: # AR5_glo, loc
     
     for SCE in ['rcp85', ]:
         mm.main(VER, N, MIN_IT, er, namelist_name, SCE)

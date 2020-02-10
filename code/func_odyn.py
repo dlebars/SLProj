@@ -8,7 +8,8 @@ from scipy.stats import norm
 
 def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_date, \
              end_date2, VAR, N, i_ys, Gam, NormD):
-    '''Compute the ocean dynamics and thermal expansion contribution to local sea level.'''
+    '''Compute the ocean dynamics and thermal expansion contribution to local sea
+    level.'''
 
     nb_MOD = len(MOD)
 
@@ -28,24 +29,24 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_dat
         TIMEt   = np.array(fi.TIME)
         i_start = int(np.abs(start_date - fi['TIME.year']).argmin())
         i_end   = int(np.abs(end_date2 - fi['TIME.year']).argmin())
-        SSH     = fi[VAR][i_start:i_end,lat_Si:lat_Ni,lon_Wi:lon_Ei]
+        SSH     = fi[VAR][i_start:i_end+1,lat_Si:lat_Ni+1,lon_Wi:lon_Ei+1]
         print(SSH.shape)
         nb_y_loop = i_end - i_start + 1
         if nb_y_loop == nb_y:
             MAT[m,:] = SSH.mean(axis=2).mean(axis=1)
             #RQ: No scaling depending on the area, gives more weight to the southern cell
-            MAT_G[m,:] = fi[VAR][i_start:i_end,0,0]
+            MAT_G[m,:] = fi[VAR][i_start:i_end+1,0,0]
         else:
-            MAT[m, :nb_y-2] = SSH.mean(axis=2).mean(axis=1)
+            MAT[m, :nb_y-1] = SSH.mean(axis=2).mean(axis=1)
             MAT[m,nb_y-1]    = MAT[m,nb_y-2]
             # Is this to initialize the size of the array? Strange method...
-            MAT_G[m,:nb_y-2] = fi[VAR][i_start:i_end,0,0]
+            MAT_G[m,:nb_y-1] = fi[VAR][i_start:i_end+1,0,0]
             MAT_G[m,nb_y-1]  = MAT_G[m,nb_y-2]
 
         # Remove the average SSH of the first 20 years from all models
-        MAT[m,:] =  MAT[m,:] - [MAT[m,:20]].mean()
+        MAT[m,:] =  MAT[m,:] - MAT[m,:21].mean()
 
-        MAT_G[m,:] = MAT_G[m,:] - MAT_G[m,:20].mean()
+        MAT_G[m,:] = MAT_G[m,:] - MAT_G[m,:21].mean()
         MAT_A[m,:] = MAT[m,:] - MAT_G[m,:]
         del(fi)
         del(lon)
