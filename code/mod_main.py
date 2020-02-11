@@ -548,10 +548,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.ANT_DYN == 'IPCC':
             Unif_AA   = np.random.uniform(0, 1, N)
-            #### 2nd order projection starting from observations and ending between -2 and 18.5 cm
+            #### 2nd order projection starting from observations and ending 
+            # between -2 and 18.5 cm
             X_ant = misc.proj2order(TIME2, a1_up_a, a1_lo_a, 18.5, -2, Unif_AA)
 
-            #### This is the influence of increased SMB on an increase in Antactic dynamics
+            #### This is the influence of increased SMB on an increase in Antactic 
+            #dynamics
             if nl.COMB == 'IND':
                 irg = np.random.permutation(N)
                 for t in range(0, nb_y2):
@@ -560,6 +562,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 for t in range(0,nb_y2):
                     X_ant[:,t] = X_ant[:,t] - Unif_AA * 0.35 * X_asmb[:,t]
 
+        elif nl.ANT_DYN == 'KNMI14':
+            X_ant = ant.ant_dyn_knmi14(SCE, a1_up_a, a1_lo_a, ys, ye, TIME2, N)
+            
         elif nl.ANT_DYN == 'KNMI16':
             print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
         elif nl.ANT_DYN == 'DC16':
@@ -581,7 +586,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on user defined periods of time
         for t in range(0, nb_y2):
             X_ant_pdf[t,:]  = X_ant_pdf[t,:] + \
-            np.histogram(X_ant[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_ant[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -599,7 +605,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
           # Compute the pdfs based on user defined periods of time
         for t in range(0, nb_y2):
             X_ant_tot_pdf[t,:]  = X_ant_tot_pdf[t,:] + \
-            np.histogram(X_ant_tot[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_ant_tot[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
             
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_ant[:,ind_d]
@@ -626,7 +633,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 UnifDd = np.random.uniform(0, 1, N)  # Sample a new independent distrib.
 
             if nl.GRE == 'KNMI14':
-                X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, 7.4, 1.7, UnifDd)
+                X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, 7.4, 1.7, \
+                                         UnifDd)
             elif nl.GRE == 'IPCC':
                 if SCE in ['rcp26', 'rcp45']:
                     Delta_gre_up_2100 = 6.3
@@ -647,7 +655,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on the chosen periods
         for t in range(0, nb_y2):
             X_gre_pdf[t,:]  = X_gre_pdf[t,] + \
-            np.histogram(X_gre[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_gre[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -675,7 +684,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on the chosen periods
         for t in range(0, nb_y2):
             X_tot_pdf[t,:]  = X_tot_pdf[t,:] + \
-            np.histogram(X_tot[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_tot[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Check the convergence
         X_tot_pdf_i = X_tot_pdf/nb_it
