@@ -92,7 +92,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     ### General parameters
     start_date = 1980    # Start reading data
-    ys = 2006   # Starting point for the integration, if this is changed problems in functions
+    ys = 2006   # Starting point for the integration, if this is changed 
+                # then expect problems in functions
     ye = 2100   # End year for computation
 
     nb_y = ye-start_date+1       # Period where data needs to be read
@@ -111,10 +112,16 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     a1_lo_g           = 0.043
     
     #### Parameters to produce PDF
-    bin_min = -20.5
-    bin_max = 500.5
-    nbin = int(bin_max - bin_min)
-    bin_centers = np.arange(bin_min + 0.5, bin_max - 0.5 + 1, 1)
+    ACCURACY = 'MM'
+    if ACCURACY == 'CM':
+        bin_min = -20.5
+        bin_max = 500.5
+        bin_centers = np.arange(bin_min + 0.5, bin_max - 0.5 + 1, 1)
+    elif ACCURACY == 'MM':
+        bin_min = -20.05
+        bin_max = 500.05
+        bin_centers = np.arange(bin_min + 0.05, bin_max - 0.05 + 0.1, 0.1)
+    nbin = len(bin_centers)
     
     ####
     TIME       = np.arange( start_date, ye + 1 )
@@ -142,7 +149,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         jfe    = np.abs(FPe - TIME2).argmin()
 
         # Read fingerprint for Glaciers and Ice Caps
-        f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', decode_times=False)
+        f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', \
+                                     decode_times=False)
         F_gic      = misc.finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
         F_gic2[jfs:jfe+1] =  F_gic[ifs:ife+1]/100 # Convert from % to fraction
@@ -163,7 +171,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         del(f_ic, lat_ic, lon_ic)
 
-        f_gw       = xr.open_dataset(DIR_F+'Relative_GROUNDWATER_reg.nc', decode_times=False)
+        f_gw       = xr.open_dataset(DIR_F+'Relative_GROUNDWATER_reg.nc', \
+                                     decode_times=False)
         lat_gw     = f_gw.latitude #tofloat?
         lon_gw     = f_gw.longitude
         finger_gw  = f_gw.GROUND
@@ -229,8 +238,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     Tref_gic = misc.Tref(1986, 2005, TGLOB, TIME)   # Glaciers and Ice Caps
     Tref_g   = misc.Tref(1980, 1999, TGLOB, TIME)   # Greenland SMB
     Tref_a   = misc.Tref(1985, 2005, TGLOB, TIME)   # Antarctic SMB
-    Tref_ad  = misc.Tref(2000, 2000, TGLOB, TIME)   # Antarctic dynamics for DC16T option
-    Tref_b   = misc.Tref(2000, 2000, TGLOB, TIME)   # Reference for Bamber et al. 2019 option
+    Tref_ad  = misc.Tref(2000, 2000, TGLOB, TIME)   # Antarctic dynamics for DC16T
+    Tref_b   = misc.Tref(2000, 2000, TGLOB, TIME)   # Reference for Bamber et al. 2019
     
     i_ys   = np.where(TIME == ys)[0][0]
     TGLOBs = TGLOB[:,i_ys:]
@@ -282,8 +291,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             NormD   = np.sort(NormD)
 
         if nl.SaveAllSamples:
-            # NormD is used in the correlation with temperature because all of the temperature
-            # distributions (different for each process) are based on a linear combination of it. 
+            # NormD is used in the correlation with temperature because all of 
+            # the temperature distributions (different for each process) are 
+            # based on a linear combination of it. 
             ar1 = np.ones(nb_yd)
             NormDc = NormD[:, np.newaxis] * ar1
             X_all[0, :, :] = NormDc
@@ -294,13 +304,14 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         CorrGT = nl.CorrGT
         if nl.COMB == 'IND':
-            CorrGT   = 0 # Force a 0 correlation, even if the CorrGT coefficient has another value
+            CorrGT   = 0 # Force a 0 correlation, even if the CorrGT coefficient
+                         # has another value
         elif nl.COMB == 'DEP':
             CorrGT = 1
 
         NormDT1 = np.random.normal(0, 1, N)
-        # Build NormDT as a combination of NormD (the distribution of GMST) and an independent
-        # normal distribution.
+        # Build NormDT as a combination of NormD (the distribution of GMST) and 
+        # an independent normal distribution.
         if nl.CorrM == 'Pearson':
             rhoP  = CorrGT
         elif nl.CorrM == 'Spearman':
@@ -311,8 +322,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, \
-                      lon_E, start_date, ye, SSH_VAR, N, i_ys, nl.GAM, NormDT)
+                X_Of = odyn.odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, \
+                                     lon_W, lon_E, start_date, ye, SSH_VAR, N, \
+                                     i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'CMIP5':
                 X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
         else:
@@ -327,9 +339,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on the chosen periods
         for t in range(0, nb_y2):
             X_O_G_pdf[t,:] = X_O_G_pdf[t,:] + \
-            np.histogram(X_Of[1,:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_Of[1,:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
             X_O_A_pdf[t,:] = X_O_A_pdf[t,:] + \
-            np.histogram(X_Of[2,:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_Of[2,:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -351,7 +365,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             else:
                 X_all[comp,:,:] = X_Of[0, :, ind_d].swapaxes(0,1)
                 #X_all[comp,:,:] = np.squeze(X_Of[0:1, :, ind_d])
-                #!!! swapaxes or squeeze are work arround a peculiar Numpy behaviour, see Tests.ipynb
+                #!!! swapaxes or squeeze are work arround a peculiar Numpy 
+                # behaviour, see Tests.ipynb
                 comp            = comp + 1
 
         del(X_Of)
@@ -439,7 +454,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on the chosen periods
         for t in range(0, nb_y2):
             X_gsmb_pdf[t, :]  = X_gsmb_pdf[t,:] + \
-            np.histogram(X_gsmb[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_gsmb[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -466,7 +482,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             # Redefine NormD to loose correlation
             NormD  = np.random.normal(0, 1, N)
 
-        if nl.ANT_DYN in ['IPCC', 'KNMI16', 'LEV14', 'SROCC']:
+        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'SROCC']:
             #Build the distribution of global temperature for this contributor
             Td_a = misc.TempDist(TGLOBs, Tref_a, nl.GAM, NormD)
 
@@ -490,7 +506,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs for the the chosen periods
         for t in range(0, nb_y2):
             X_asmb_pdf[t,:]  = X_asmb_pdf[t,:] + \
-            np.histogram(X_asmb[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_asmb[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
     
         # Update X_tot, the sum of all contributions
 
@@ -523,7 +540,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on the chosen periods
         for t in range(0,nb_y2):        # Loop on the period
             X_landw_pdf[t,:]  = X_landw_pdf[t,:] + \
-            np.histogram(X_landw[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_landw[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':

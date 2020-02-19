@@ -33,7 +33,8 @@ def tglob_cmip5(INFO, files, SCE, nb_y, start_date, ye):
     col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
                  'Sep', 'Oct', 'Nov', 'Dec']
     for m in range(0,nb_MOD):
-        TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, names=col_names)
+        TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, \
+                               names=col_names)
         time     = TEMP['Year'][:]
         dim_t    = len(time)
         i_start  = np.where(time == start_date)[0][0]
@@ -104,7 +105,8 @@ def landw_ar5(ys, TIME2, N):
     sig2   = (Delta_grw_up - Delta_grw_lo)/(alpha_95 - alpha_05)
     NormD2 = np.random.normal(0, 1, N)       # The standard deviations sould be scaled.
 
-    X_landw = np.zeros([N,nb_y2])  # Independent of the scenario, size is to add up easily.
+    X_landw = np.zeros([N,nb_y2])  # Independent of the scenario, size is to 
+                                   # add up easily.
     for t in range(0, nb_y2):
         X_landw[:,t] = (Delta_grw_up[t] - Delta_grw_lo[t])/2 + sig2[t]*NormD2
         
@@ -137,7 +139,7 @@ def perc_df(InPDF, Perc, bin_centers):
      InPDF : A pdf computed from the np.histogram function
      Perc  : The percentiles to compute'''
 
-    PDF_cum = InPDF.cumsum(axis=0)*100
+    PDF_cum = InPDF.cumsum(axis=0)*100*(bin_centers[1] - bin_centers[0])
     dimP    = len(Perc)
     perc_ar = np.zeros(dimP)
     for i in range(0, dimP):

@@ -28,6 +28,8 @@
 #                   projection.
 # ANT_DYN: Antarctic dynamics
 # Possible choices: "IPCC" for AR5 process based 
+#                   "KNMI14" as implemented by de Vries et al. 2014 for the KNMI'14 
+#                   scenarios
 #                   "KNMI16" for Rijkswaterstaat project
 #                   "DC16"   DeConto and Pollard 2016
 #                   "DC16T"  DeConto and Pollard 2016 with with temperature sensitivity
