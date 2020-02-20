@@ -134,20 +134,30 @@ def proj2order(TIME_loc, a1_up, a1_lo, Delta_up_2100, Delta_lo_2100, Unif):
     return X_out
 
 def perc_df(InPDF, Perc, bin_centers):
-    '''Compute percentiles from a PDF and print.
+    '''Compute percentiles from a PDF without time dimension.
      Inputs:
      InPDF : A pdf computed from the np.histogram function
      Perc  : The percentiles to compute'''
-
     PDF_cum = InPDF.cumsum(axis=0)*100*(bin_centers[1] - bin_centers[0])
-    dimP    = len(Perc)
-    perc_ar = np.zeros(dimP)
-    for i in range(0, dimP):
-        #print('Percentile: ' + str(Perc[i]))
+    perc_ar = np.zeros(len(Perc))
+    for i in range(0, len(Perc)):
         indi =  np.abs(PDF_cum - Perc[i]).argmin()
         perc_ar[i] = bin_centers[indi]
     perc_df = pd.DataFrame(data= {'percentiles': Perc, 'values': perc_ar})
     perc_df = perc_df.set_index('percentiles')
+    return perc_df
+        
+def perc_df_2d(InPDF, Perc, bin_centers, time_ar):
+    '''Compute percentiles from a PDF with time dimension. '''
+    PDF_cum = InPDF.cumsum(axis=1)*100*(bin_centers[1] - bin_centers[0])
+    perc_ar = np.zeros([InPDF.shape[0], len(Perc)])
+    for t in range(0, InPDF.shape[0]):
+        for i in range(0, len(Perc)):
+            indi =  np.abs(PDF_cum[t,:] - Perc[i]).argmin()
+            perc_ar[t,i] = bin_centers[indi]
+    perc_df = pd.DataFrame(perc_ar)
+    perc_df.columns = [str(i)+'pc' for i in Perc]
+    perc_df.index = time_ar
     return perc_df
 
 def finger1D(lats, lons, lat1D, lon1D, fingerprint):

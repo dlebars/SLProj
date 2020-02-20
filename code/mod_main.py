@@ -63,15 +63,18 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
                  'Greenland dynamics', 'sum anta.', 'Total']
     # Percentiles to print at run time
-    Perc  = (1,5,10,17,20,50,80,83,90,95,99,99.5,99.9)
+    Perc = [1,5,10,17,20,50,80,83,90,95,99,99.5,99.9]
+    
+    # Percentiles to store in outputs
+    Perc_store = [1,5,17,50,83,95,99]
     
     if nl.SaveAllSamples:
         if nl.LOC:  # Number of components, used to compute correlations efficently.
             NameComponents = ["Glob. temp.", "Glob. thermal exp.", "Local ocean", \
                               "Barometer effect", "Glaciers", "Green. SMB", \
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
-            print("!!! Warning: This combination of SaveAllSamples = "+str(nl.SaveAllSamples)+ \
-                  " and LOC:"+str(nl.LOC)+" hasn't been tested")
+            print("!!! Warning: This combination of SaveAllSamples = \
+            "+str(nl.SaveAllSamples)+ " and LOC:"+str(nl.LOC)+" hasn't been tested")
         else:
             NameComponents = ["Glob. temp.", "Thermal exp.", "Glaciers", "Green. SMB", \
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
@@ -149,9 +152,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         jfe    = np.abs(FPe - TIME2).argmin()
 
         # Read fingerprint for Glaciers and Ice Caps
-        f_gic      = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', \
+        f_gic = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', \
                                      decode_times=False)
-        F_gic      = misc.finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
+        F_gic = misc.finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
         F_gic2[jfs:jfe+1] =  F_gic[ifs:ife+1]/100 # Convert from % to fraction
 
@@ -784,7 +787,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         print(M_Corr_S[-1,:])
     
     ############################################################################
-    # Output the results: Choice between xarray and Netcdf4 libraries
+    # Output the results:
     
     nb_proc = 9+2     # 9 different processes plus total antarctic and total
 
@@ -806,17 +809,28 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                            dims=['time', 'proc', 'bin'])
 
     MAT_OUT.attrs['units'] = 'cm'
-    MAT_OUT.attrs['long_name'] = 'This variable contains the pdfs of each sea level' + \
-    'contributor and of the total sea level. The list of processes included here is' + \
-    'written in variable ProcessNames'
+    MAT_OUT.attrs['long_name'] = 'This variable contains the pdfs of each sea ' + \
+    'level contributor and of the total sea level.'
 
+    # Compute time series of a few percentiles to export
+    perc_2d_ar = np.zeros([nb_y2, nb_proc, len(Perc_store)])
+    for i in range(nb_proc):
+        perc_2d_ar[:,i,:] = np.array( \
+            misc.perc_df_2d(MAT_OUTd[:,i,:], Perc_store, bin_centers, TIME2))
+    
+    perc_2d_da = xr.DataArray(perc_2d_ar, coords=[TIME2, ProcessNames, Perc_store], \
+                           dims=['time', 'proc', 'percentiles'])
+    perc_2d_da.attrs['units'] = 'cm'
+    perc_2d_da.attrs['long_name'] = 'Selection of time series for a few ' + \
+    'percentiles. Other quantiles can be computed from the pdfs data (MAT_RES).'
+    
     if nl.Corr:
         print('Output for option np.Corr = '+ str(nl.Corr) +' is not supported yet')
-
+    
     print("### Export data to a NetCDF file ##################################")
     
     # Build a DataSet
-    MAT_OUT_ds = xr.Dataset({'MAT_RES': MAT_OUT})
+    MAT_OUT_ds = xr.Dataset({'MAT_RES': MAT_OUT, 'Perc_ts' : perc_2d_da})
     
     MAT_OUT_ds.attrs['options'] = \
     "Computations were done with the following options:: " + \
