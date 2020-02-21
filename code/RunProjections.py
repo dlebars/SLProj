@@ -21,5 +21,5 @@ sys.path.append(os.getcwd() + namelists_dir)
 
 for namelist_name in ['loc', ]: # AR5_glo, loc
     
-    for SCE in ['rcp85', ]:
+    for SCE in ['rcp45', ]:
         mm.main(VER, N, MIN_IT, er, namelist_name, SCE)
