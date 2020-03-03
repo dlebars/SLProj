@@ -54,21 +54,18 @@ def TempInterp(IceSheet, Tdcum, Tlcum, Thcum, PAR, UnifP):
             (Thcum[t] - Tlcum[t]) * Tdcum[:, t] \
             + (Thcum[t]*PAR[i, j, 0, t] - Tlcum[t]*PAR[i, j, 1, t]) / \
             (Thcum[t] - Tlcum[t])
-
+    PARtT[0,:,:] = np.where(PARtT[0,:,:] <= 0, 0.001, PARtT[0,:,:])
+    ind0 = np.where(PARtT[0,:,:] == 0.001)
+    if len(ind0[0]) > 0:
+        print('Warning: The shape parameter was ' +\
+              'set to 0.001 '+ str(len(ind0[0])) + ' times out of ' + str(2*N) + \
+              ' samples to avoid negative values')
+        
     # Convert the shape parameters to a x value from gamma using the percentiles
     # Could be much faster with categories of similar shape
     xg = np.zeros([2, N]) # DRAWS, TIME
-    for r in range(0,N):
-        for t in range (0,2):
-            if PARtT[0, t, r] <= 0:
-                # Cummulate the number of times this happens
-                PARtT[0, t, r] = 0.01
-                ind0 = ind0+1
-            if ind0 > 0:
-                print('Warning: For period'+ str(t) +' the shape parameter was' +\
-                      'set to 0.01 '+ str(ind0) + 'times out of' + str(N) + \
-                      'samples to avoid negative values')
-            xg[t, r] = stats.gamma.ppf( UnifP[r], PARtT[0, t, r], 0, 1)
+    for t in range (0,2):
+        xg[t, :] = stats.gamma.ppf( UnifP, PARtT[0, t, :], 0, 1)
 
     # Apply scale and location parameters
     IS_cont = xg * PARtT[2, :, :] + PARtT[1, :, :]
@@ -104,10 +101,10 @@ def TimeInterp(IS_cont, td, v0):
     ISpv2 = np.argsort(ISpv)
     p1 = p1u[ISpv2]
     # Check
-    print('Compute stats.spearmanr(p1, IS_cont[0,:], result should be 1:')
-    print(stats.spearmanr(p1, IS_cont[0,:]))
-    print('Compute stats.spearmanr(p1u, IS_cont[0,:], result should be 0:')
-    print(stats.spearmanr(p1u, IS_cont[0,:]))
+#     print('Compute stats.spearmanr(p1, IS_cont[0,:], result should be 1:')
+#     print(stats.spearmanr(p1, IS_cont[0,:]))
+#     print('Compute stats.spearmanr(p1u, IS_cont[0,:], result should be 0:')
+#     print(stats.spearmanr(p1u, IS_cont[0,:]))
     
     Pa = X1 - p1*(t1 - t0) - p0
     Pb = X2 - p1*(t2 - t0) - p0
