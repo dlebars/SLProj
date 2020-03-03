@@ -6,7 +6,7 @@
 
 import numpy as np
 import pandas as pd
-
+from scipy import stats
 
 def ReadB19(path):
     '''Read distribution parameter data (shape, location and scale) that are 
@@ -32,6 +32,44 @@ def TempF(T0, T1, T2, t0, t1, t2):
     T[0:t1-t0+1] = (T1 - T0)/(t1 - t0) * tf[0:t1-t0+1] + (t1*T0 - t0*T1)/(t1-t0)
     T[t1-t0+1:t2-t0+1] = (T2 - T1)/(t2 - t1) * tf[t1-t0+1:t2-t0+1] + (t2*T1 - t1*T2)/(t2-t1)
     return T
+
+
+def TempInterp(IceSheet, Tdcum, Tlcum, Thcum, PAR, UnifP):
+    '''Temperature interpolation function'''
+    dimTd = Tdcum.shape()
+    N = dimTd[0]
+    if IceSheet == 'GIS':
+        i = 0
+    else if IceSheet == 'WAIS':
+        i = 1
+    else if IceSheet == 'EAIS':
+        i = 2
+    else
+        print('ERROR: Ice sheet name '+IceSheet+' not recognised')
+
+    PARtT = np.zeros([3, 2, N]) # PARAM, TIME, DRAWS
+    for j in range(0,3):
+        for t in range(0,2):
+            PARtT[j, t, :] = (PAR[i, j, 1, t] - PAR[i, j, 0, t])/ \
+            (Thcum[t] - Tlcum[t]) * Tdcum[:, t] \
+            + (Thcum[t]*PAR[i, j, 0, t] - Tlcum[t]*PAR[i, j, 1, t]) / \
+            (Thcum[t] - Tlcum[t])
+
+    # Convert the shape parameters to a x value from gamma using the percentiles
+    # Could be much faster with categories of similar shape
+    xg = np.zeros([2, N]) # DRAWS, TIME
+    for r in range(0,N):
+    for t in range (0,2):
+        if PARtT[0, t, r] <= 0:
+            print('Warning: PARtT[0, t, r] <= 0, setting to 0.01')
+            PARtT[0, t, r] = 0.01
+        xg[t, r] = stats.gamma.ppf( UnifP[r], PARtT[0, t, r], 0, 1)
+
+    # Apply scale and location parameters
+    ICcont = xg * PARtT[2, :, :] + PARtT[1, :, :]
+
+    return ICcont
+
 
 # def TimeInterp(IS_cont, td, v0):
 #     '''Time interpolation between present day mass loss and future SEJ data'''
