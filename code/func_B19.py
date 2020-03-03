@@ -25,3 +25,53 @@ def ReadB19(path):
 
     return PAR
 
+def TempF(T0, T1, T2, t0, t1, t2):
+    '''Define the high and low temperature scenarios from Bamber et al. 2019'''
+    tf = np.arange(t0, t2)
+    T = np.zeros(len(tf))
+    T[0:t1-t0+1] = (T1 - T0)/(t1 - t0) * tf[0:t1-t0+1] + (t1*T0 - t0*T1)/(t1-t0)
+    T[t1-t0+1:t2-t0+1] = (T2 - T1)/(t2 - t1) * tf[t1-t0+1:t2-t0+1] + (t2*T1 - t1*T2)/(t2-t1)
+    return T
+
+# def TimeInterp(IS_cont, td, v0):
+#     '''Time interpolation between present day mass loss and future SEJ data'''
+
+#     dimIS = dimsizes(IS_cont)
+#     N = dimIS(1)
+#     tf = ispan(td(0),td(2),1)
+#     dimt = dimsizes(tf)
+
+#     t0 = td(0)
+#     t1 = td(1)
+#     t2 = td(2)
+
+#     ;# Extrapollate using a third order polynomial:
+#     ; X(t) = p3*(t-t0)^3 + p2*(t-t0)^2 + p1*(t-t0) + p0
+#     ; Using three conditions:
+#     ; X(t0) = 0
+#     ; X'(t0) = v0
+#     ; X(t1) = X1
+#     ; X(t2) = X2
+
+#     X1 = IS_cont(0,:)
+#     X2 = IS_cont(1,:)
+
+#     p0 = 0
+#     p1u = fspan(v0(0), v0(1), N)
+#     ;Change the order of p1u to fit the order of IS_cont
+#     ISpv  = dim_pqsort(IS_cont(0,:), 1)
+#     ISpv2 = dim_pqsort(ISpv, 1)
+#     p1 = p1u(ISpv2)
+
+#     Pa = X1 - p1*(t1 - t0) - p0
+#     Pb = X2 - p1*(t2 - t0) - p0
+
+#     p3 = (Pa*(t2-t0)^2 - Pb*(t1-t0)^2) / ( (t1-t0)^3*(t2-t0)^2 - (t2-t0)^3*(t1-t0)^2 )
+#     p2 = (Pa - p3*(t1-t0)^3) / (t1-t0)^2
+
+#     IS_cont_t = new((/N, dimt/), float)
+#     do t=0,dimt-1
+#     IS_cont_t(:, t) = p3*t^3 + p2*t^2 + p1*t + p0
+#     end do
+
+#     return IS_cont_t
