@@ -13,6 +13,7 @@ import func_misc as misc
 import func_gic as gic
 import func_gre as gre
 import func_ant as ant
+import func_B19 as b19
 
 def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
@@ -441,15 +442,15 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             del(NormDl)
             del(Td_g)
 
-#        elif nl.GRE == 'B19':
+        elif nl.GRE == 'B19':
             #Build the percentiles to follow over time in the distributions
             #can be used to correlate this uncertainty with others.
-#             UnifP_GIS = np.random.uniform(0, 1, N)
+            UnifP_GIS = np.random.uniform(0, 1, N)
 
-#             Td_b  = misc.TempDist(TGLOBs, Tref_b, GAM, NormD)
-#             X_gsmb = Bamber19("GIS", UnifP_GIS, (/a1_lo_g, a1_up_g/), ys, Td_b)
-#             X_gsmb = X_gsmb + 0.3    # Contribution between 1995 and 2005 in mm
-#             del(UnifP_GIS)
+            Td_b  = misc.TempDist(TGLOBs, Tref_b, nl.GAM, NormD)
+            X_gsmb = b19.Bamber19('GIS', UnifP_GIS, [a1_lo_g, a1_up_g], ys, Td_b)
+            X_gsmb = X_gsmb + 0.3    # Contribution between 1995 and 2005 in mm
+            del(UnifP_GIS)
 
         for t in range(0, nb_y2):
             X_gsmb[:,t] = X_gsmb[:,t] * F_gsmb2[t]
@@ -597,7 +598,15 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         elif nl.ANT_DYN == 'SROCC':
             print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
         elif nl.ANT_DYN == 'B19':
-            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+            # Build the percentiles to follow over time in the distributions
+            # can be used to correlate this uncertainty with others.
+            UnifP_WAIS = np.random.uniform(0, 1, N)
+            UnifP_EAIS = np.random.uniform(0, 1, N)
+
+            Td_b  = misc.TempDist(TGLOBs, Tref_b, nl.GAM, NormD)
+            X_ant_wais = b19.Bamber19('WAIS', UnifP_WAIS, [a1_lo_a, a1_up_a], ys, Td_b)
+            X_ant_eais = b19.Bamber19('EAIS', UnifP_EAIS, [0, 0], ys, Td_b)
+            X_ant = X_ant_wais + X_ant_eais
         
         X_ant = X_ant + 0.25 # Add 0.25cm, the conribution from 1995 to 2005
 
@@ -644,7 +653,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.GRE == 'B19':
             # This contribution is included in SMB in this case
             X_gre = np.zeros([N,nb_y2])
-            X_gre = 0
         else:
             # First order term (cm/y), equal to half of observations in 2006
             a1_up_gdyn        = 0.5 * a1_up_g
