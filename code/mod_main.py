@@ -671,8 +671,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 elif SCE == 'rcp85':
                     Delta_gre_up_2100 = 8.5
                     Delta_gre_lo_2100 = 2
-            X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, Delta_gre_up_2100, 
-                                Delta_gre_lo_2100, UnifDd)
+                X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, \
+                                         Delta_gre_up_2100, Delta_gre_lo_2100, UnifDd)
 
             del(UnifDd)
             X_gre = X_gre + 0.15  # Add 0.15cm, the contribution from 1995 to 2005
@@ -718,7 +718,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         # Check the convergence
         X_tot_pdf_i = X_tot_pdf/nb_it
-        PDF_cum     = X_tot_pdf_i[-1,:].cumsum()*100
+        PDF_cum     = X_tot_pdf_i[-1,:].cumsum()*100*(bin_centers[1] - bin_centers[0])
         indi        = np.abs(PDF_cum - 99.9).argmin()
         CONV.append(bin_centers[indi])
         print('99.9 percentile: ' + str(CONV[-1]))
