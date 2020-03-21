@@ -7,3 +7,5 @@ namelists/__pycache__/
 data/
 ref_results/
 outputs/
+reports/
+notebooks/*pdf
