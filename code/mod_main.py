@@ -116,7 +116,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     a1_lo_g           = 0.043
     
     #### Parameters to produce PDF
-    ACCURACY = 'MM'
+    ACCURACY = 'TM4'
     if ACCURACY == 'CM':
         bin_min = -20.5
         bin_max = 500.5
@@ -125,6 +125,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         bin_min = -20.05
         bin_max = 500.05
         bin_centers = np.arange(bin_min + 0.05, bin_max - 0.05 + 0.1, 0.1)
+    elif ACCURACY == 'TM4': #10^-4
+        bin_min = -20.005
+        bin_max = 500.005
+        bin_centers = np.arange(bin_min + 0.005, bin_max - 0.005 + 0.01, 0.01)
     nbin = len(bin_centers)
     
     ####
@@ -394,7 +398,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         #Build the distribution of global temperature for this process
         Td_gic = misc.TempDist(TGLOBs, Tref_gic, nl.GAM, NormD)
 
-        NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept for correlation
+        NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept 
+                                              #for correlation
         X_gic = gic.gic_ar5(Td_gic, NormDs)
 
         for t in range(0,nb_y2): # Use broadcasting?
@@ -403,7 +408,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Compute the pdfs based on the chosen periods
         for t in range(0,nb_y2):  # Use broadcasting?
             X_gic_pdf[t,:]  = X_gic_pdf[t,:] + \
-            np.histogram(X_gic[:,t], bins=nbin, range=(bin_min, bin_max), density=True)[0]
+            np.histogram(X_gic[:,t], bins=nbin, range=(bin_min, bin_max), \
+                         density=True)[0]
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
