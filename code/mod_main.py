@@ -41,16 +41,15 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         DIR_IBEmean = ROOT+'Data_AR5/InvertedBarometer/globalmeans_from_1x1_glob/'
 
         # Box of interest, used for local computations:
-        lat_N = 60    # Original box from Hylke: 51-60N, -3.5,7.5E
-        lat_S = 51
-        lon_W = -3.5
-        lon_E = 7.5
+        # Original box from Hylke: 51-60N, -3.5,7.5E
+        lat_N, lat_S, lon_W, lon_E = 60, 51, -3.5, 7.5
 
         # Point of interest (Netherlands), used for local computations:
         lat_Neth = 53
         lon_Neth = 5
         if nl.ODYN == 'KNMI':
             DIR_O       = ROOT + 'Data_AR5/Ocean/1x1_reg/'
+            DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
         elif nl.ODYN == 'IPCC':
             sys.exit('ERROR: This option of ocean dynamics can only be used for' + \
                      ' global computations')
@@ -98,7 +97,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     start_date = 1980    # Start reading data
     ys = 2006   # Starting point for the integration, if this is changed 
                 # then expect problems in functions
-    ye = 2100   # End year for computation
+    ye = 2100   # odynnd year for computation
 
     nb_y = ye-start_date+1       # Period where data needs to be read
     nb_y2 = ye - ys +1           # Period of integration of the model
@@ -330,9 +329,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, \
-                                     lon_W, lon_E, start_date, ye, SSH_VAR, N, \
-                                     i_ys, nl.GAM, NormDT)
+                X_Of = odyn.odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, \
+                                     lat_S, lon_W, lon_E, start_date, ye, SSH_VAR, \
+                                     N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'CMIP5':
                 X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
         else:

@@ -6,8 +6,8 @@ import numpy as np
 import xarray as xr
 from scipy.stats import norm
 
-def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_date, \
-             end_date2, VAR, N, i_ys, Gam, NormD):
+def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
+             start_date, ye, SSH_VAR, N, i_ys, Gam, NormD):
     '''Compute the ocean dynamics and thermal expansion contribution to local sea
     level.'''
 
@@ -20,6 +20,7 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_dat
 
     for m in range(0,nb_MOD):
         fi      = xr.open_dataset(DIR_O + MOD[m] + '_' + SCE + '.nc')
+        fig     = xr.open_dataset(DIR_OG + MOD[m] + '_' + SCE + '.nc')
         lon     = np.array(fi.longitude)  # Here we do not assume the models all 
         lat     = np.array(fi.latitude)   # have the same grid, even though they DO
         lat_Ni  = np.abs(lat_N - lat).argmin()
@@ -28,20 +29,19 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_dat
         lon_Ei  = np.abs(lon_E - lon).argmin()
         TIMEt   = np.array(fi.TIME)
         i_start = int(np.abs(start_date - fi['TIME.year']).argmin())
-        i_end   = int(np.abs(end_date2 - fi['TIME.year']).argmin())
-        SSH     = fi[VAR][i_start:i_end+1,lat_Si:lat_Ni+1,lon_Wi:lon_Ei+1]
+        i_end   = int(np.abs(ye - fi['TIME.year']).argmin())
+        SSH     = fi[SSH_VAR][i_start:i_end+1,lat_Si:lat_Ni+1,lon_Wi:lon_Ei+1]
         print(SSH.shape)
         nb_y_loop = i_end - i_start + 1
         if nb_y_loop == nb_y:
             MAT[m,:] = SSH.mean(axis=2).mean(axis=1)
             #RQ: No scaling depending on the area, gives more weight to the southern
             #cell
-            MAT_G[m,:] = fi[VAR][i_start:i_end+1,0,0]
-        else:
+            MAT_G[m,:] = fig[SSH_VAR][i_start:i_end+1,0,0]
+        else: # For models that stop in 2099?
             MAT[m, :nb_y-1] = SSH.mean(axis=2).mean(axis=1)
             MAT[m,nb_y-1]    = MAT[m,nb_y-2]
-            # Is this to initialize the size of the array? Strange method...
-            MAT_G[m,:nb_y-1] = fi[VAR][i_start:i_end+1,0,0]
+            MAT_G[m,:nb_y-1] = fig[SSH_VAR][i_start:i_end+1,0,0]
             MAT_G[m,nb_y-1]  = MAT_G[m,nb_y-2]
 
         # Remove the average SSH of the first 20 years from all models
@@ -82,7 +82,7 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_dat
     return X_O_out
 
 
-# def odyn_glob_knmi14(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, start_date, end_date2, \
+# def odyn_glob_knmi14(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, start_date, ye, \
 #       VAR, N, i_ys, Gam, NormD)
 #     '''Compute thermal expansion contribution to global sea level from KNMI'14 
 #     data. The data was processed from the CMIP5 dataset.'''
@@ -99,7 +99,7 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, lat_N, lat_S, lon_W, lon_E, start_dat
 #     TIMEt   = fi->TIME
 #     TIMEt2  = cd_calendar(TIMEt,0)
 #     i_start = closest_val(start_date,TIMEt2(:,0))
-#     i_end   = closest_val(end_date2,TIMEt2(:,0))
+#     i_end   = closest_val(ye,TIMEt2(:,0))
 #     fig          = addfile(DIR_OG+MOD(m)+"_"+SCE+".nc","r")
 #     nb_y_loop = i_end - i_start +1
 #     if nb_y_loop.eq.nb_y then
