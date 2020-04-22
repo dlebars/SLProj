@@ -236,7 +236,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     else:
         print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
     
-    TGLOB = misc.tglob_cmip5(nl.INFO, files, SCE, nb_y, start_date, ye)
+    TGLOB = misc.tglob_cmip5(nl.INFO, files, SCE, start_date, ye)
     del(files)
 
     # Read TGLOB and compute reference temperaure for each model
