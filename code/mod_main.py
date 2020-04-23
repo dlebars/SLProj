@@ -97,7 +97,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     start_date = 1980    # Start reading data
     ys = 2006   # Starting point for the integration, if this is changed 
                 # then expect problems in functions
-    ye = 2100   # odynnd year for computation
+    ye = 2100   # end year for computation
 
     nb_y = ye-start_date+1       # Period where data needs to be read
     nb_y2 = ye - ys +1           # Period of integration of the model
