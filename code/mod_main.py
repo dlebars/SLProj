@@ -757,7 +757,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.Decomp:
             for t in range(0, nb_yd):
                 for bi in (0, nbin):
-                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) and \
+                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) and \ #!!! use "&"" the element wise "and"
                                         (X_tot_sel[:,t] <= bin_min+bi+1) )
                     if len(ind_bin) > 1:
                         X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
