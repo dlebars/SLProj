@@ -115,19 +115,24 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     a1_lo_g           = 0.043
     
     #### Parameters to produce PDF
-    ACCURACY = 'MM'
-    if ACCURACY == 'CM':
-        bin_min = -20.5
-        bin_max = 500.5
-        bin_centers = np.arange(bin_min + 0.5, bin_max - 0.5 + 1, 1)
-    elif ACCURACY == 'MM':
-        bin_min = -20.05
-        bin_max = 500.05
-        bin_centers = np.arange(bin_min + 0.05, bin_max - 0.05 + 0.1, 0.1)
-    elif ACCURACY == 'TM4': #10^-4
-        bin_min = -20.005
-        bin_max = 500.005
-        bin_centers = np.arange(bin_min + 0.005, bin_max - 0.005 + 0.01, 0.01)
+#     ACCURACY = 'MM'
+#     if ACCURACY == 'CM':
+#         bin_min = -20.5
+#         bin_max = 500.5
+#         bin_centers = np.arange(bin_min + 0.5, bin_max - 0.5 + 1, 1)
+#     elif ACCURACY == 'MM':
+#         bin_min = -20.05
+#         bin_max = 500.05
+#         bin_centers = np.arange(bin_min + 0.05, bin_max - 0.05 + 0.1, 0.1)
+#     elif ACCURACY == 'TM4': #10^-4
+#         bin_min = -20.005
+#         bin_max = 500.005
+#         bin_centers = np.arange(bin_min + 0.005, bin_max - 0.005 + 0.01, 0.01)
+
+    RESOL = 0.1 # resolution of the pdf in cm, tested: 1, 0.1, 0.0001
+    bin_min = -20. - RESOL/2
+    bin_max = 500. + RESOL/2
+    bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, 0.1)   
     nbin = len(bin_centers)
     
     ####
@@ -280,8 +285,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
     if nl.Decomp:
         X_Decomp = np.zeros([nb_comp-1,nb_yd,nbin])
-        print('X_Decomp.shape')
-        print(X_Decomp.shape)
     
     while not END:
         nb_it = nb_it + 1
@@ -756,19 +759,21 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                         pl = pl+1
 
         X_tot_sel = X_tot[:,ind_d]
+        print(X_tot_sel.shape)
         if nl.Decomp:
+            print('Decomp is on')
             for t in range(0, nb_yd):
                 for bi in range(0, nbin): #!!! use "&"" the element wise "and"
-                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) &
-                                        (X_tot_sel[:,t] <= bin_min+2*bi) )
+                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi*RESOL) &
+                                        (X_tot_sel[:,t] <= bin_min+(bi+1)*RESOL) )[0]
+        
                     if len(ind_bin) > 1:
                         X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
                         X_all[1:,ind_bin,t].mean(axis=1)
                     else:
-                        X_Decomp[:,t,bi] = np.nan
+                        X_Decomp[:,t,bi] = 0
+                        
                     del(ind_bin)
-            print('X_Decomp.shape')
-            print(X_Decomp.shape)
 
         del(X_tot)
         print('Finished iteration ' + str(nb_it))
