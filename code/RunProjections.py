@@ -19,7 +19,8 @@ names_col = ('Keywords', 'Values')
 namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
-for namelist_name in ['KNMI14', ]: # AR5_glo, loc, B19_glo, KNMI14, B19_loc
+# Possible choices: AR5_glo, loc, B19_glo, KNMI14, B19_loc, AR5_glo_decomp 
+for namelist_name in ['AR5_glo_decomp', ]:
     
     for SCE in ['rcp45', 'rcp85']: #rcp85, rcp45
         mm.main(VER, N, MIN_IT, er, namelist_name, SCE)

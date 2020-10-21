@@ -115,7 +115,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     a1_lo_g           = 0.043
     
     #### Parameters to produce PDF
-    ACCURACY = 'TM4'
+    ACCURACY = 'MM'
     if ACCURACY == 'CM':
         bin_min = -20.5
         bin_max = 500.5
@@ -136,7 +136,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     ind_d      = np.where(TIME2 % 10 == 0)[0] # Select the indices of 2010, 2020... 2100
     nb_yd      = len(ind_d)
     
-    #### Read finger prints, some are time dependent so make all of them  time 
+    #### Read fingerprints, some are time dependent so make all of them time 
     # dependent for easy mutliplication at the end.
     
     F_gic2  = np.ones(nb_y2)
@@ -280,6 +280,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
     if nl.Decomp:
         X_Decomp = np.zeros([nb_comp-1,nb_yd,nbin])
+        print('X_Decomp.shape')
+        print(X_Decomp.shape)
     
     while not END:
         nb_it = nb_it + 1
@@ -423,7 +425,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_gic[:,ind_d]
-            comp        = comp + 1
+            comp = comp + 1
 
         del(X_gic)
         del(Td_gic)
@@ -479,7 +481,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_gsmb[:,ind_d]
-            comp            = comp + 1
+            comp = comp + 1
             
         del(X_gsmb)
     
@@ -535,7 +537,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_asmb[:,ind_d]
-            comp            = comp + 1
+            comp = comp + 1
         
         ###############################################################################
         if nl.INFO:
@@ -561,7 +563,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_landw[:,ind_d]
-            comp        = comp + 1
+            comp = comp + 1
     
         del(X_landw)
         
@@ -645,7 +647,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_ant[:,ind_d]
-            comp            = comp + 1
+            comp = comp + 1
 
         del(X_ant)
         del(X_ant_tot)
@@ -705,7 +707,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_gre[:,ind_d]
-            comp        = comp + 1
+            comp = comp + 1
         del(X_gre)
     
         ########################################################################
@@ -756,18 +758,20 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         X_tot_sel = X_tot[:,ind_d]
         if nl.Decomp:
             for t in range(0, nb_yd):
-                for bi in (0, nbin):
-                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) and \ #!!! use "&"" the element wise "and"
-                                        (X_tot_sel[:,t] <= bin_min+bi+1) )
+                for bi in range(0, nbin): #!!! use "&"" the element wise "and"
+                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi) &
+                                        (X_tot_sel[:,t] <= bin_min+2*bi) )
                     if len(ind_bin) > 1:
                         X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
                         X_all[1:,ind_bin,t].mean(axis=1)
                     else:
-                        X_Decomp[:,t,bi] = np.NA
+                        X_Decomp[:,t,bi] = np.nan
                     del(ind_bin)
+            print('X_Decomp.shape')
+            print(X_Decomp.shape)
 
         del(X_tot)
-        print("Finished iteration " + str(nb_it))
+        print('Finished iteration ' + str(nb_it))
     
         #END = True # Just for testing
         ##### End of main loop
@@ -791,12 +795,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         X_Decomp      = X_Decomp/nb_it
 
     print('### Numbers for the total distribution ###')
-    print("### Scenario " + SCE + " ###")
+    print('### Scenario " + SCE + " ###')
     p     = misc.perc_df(X_tot_pdf[-1,:], Perc, bin_centers)
     print(p)
     
     if nl.Corr:
-        print("### Spearman correlations ###")
+        print('### Spearman correlations ###')
         print(M_Corr_S[-1,:])
     
     ############################################################################
@@ -822,7 +826,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                            dims=['time', 'proc', 'bin'])
 
     MAT_OUT.attrs['units'] = 'cm'
-    MAT_OUT.attrs['long_name'] = 'This variable contains the pdfs of each sea ' + \
+    MAT_OUT.attrs['long_name'] = 'Contains the pdfs of each sea ' + \
     'level contributor and of the total sea level.'
 
     # Compute time series of a few percentiles to export
@@ -844,6 +848,20 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     # Build a DataSet
     MAT_OUT_ds = xr.Dataset({'MAT_RES': MAT_OUT, 'Perc_ts' : perc_2d_da})
+    
+    if nl.Corr:
+        print('Not yet implemented')
+        # Write PearsonCor and SpearmanCor out (MAT_OUTc2, MAT_OUTc2)
+        # proc2 coordinate name
+    if nl.Decomp:
+        X_Decomp_da = xr.DataArray(X_Decomp, 
+                                   coords=[NameComponents[1:], TIME2[ind_d], bin_centers], 
+                                   dims=['proc3', 'time_s', 'bin'])
+        X_Decomp_da.attrs['long_name'] = ('Provides the average decomposition '+
+                                          'of total sea level into its individual '+ 
+                                          'components')
+        MAT_OUT_ds['decomp'] = X_Decomp_da
+
     
     MAT_OUT_ds.attrs['options'] = \
     "Computations were done with the following options:: " + \
