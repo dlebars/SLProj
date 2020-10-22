@@ -15,7 +15,7 @@ import func_gre as gre
 import func_ant as ant
 import func_B19 as b19
 
-def main(VER, N, MIN_IT, er, namelist_name, SCE):
+def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     """Compute future total sea level distribution.
                Calls external functions for each contribution.
                 List of processes considered:
@@ -115,21 +115,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     a1_lo_g           = 0.043
     
     #### Parameters to produce PDF
-#     ACCURACY = 'MM'
-#     if ACCURACY == 'CM':
-#         bin_min = -20.5
-#         bin_max = 500.5
-#         bin_centers = np.arange(bin_min + 0.5, bin_max - 0.5 + 1, 1)
-#     elif ACCURACY == 'MM':
-#         bin_min = -20.05
-#         bin_max = 500.05
-#         bin_centers = np.arange(bin_min + 0.05, bin_max - 0.05 + 0.1, 0.1)
-#     elif ACCURACY == 'TM4': #10^-4
-#         bin_min = -20.005
-#         bin_max = 500.005
-#         bin_centers = np.arange(bin_min + 0.005, bin_max - 0.005 + 0.01, 0.01)
-
-    RESOL = 0.1 # resolution of the pdf in cm, tested: 1, 0.1, 0.0001
     bin_min = -20. - RESOL/2
     bin_max = 500. + RESOL/2
     bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, 0.1)   
