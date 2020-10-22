@@ -117,7 +117,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     #### Parameters to produce PDF
     bin_min = -20. - RESOL/2
     bin_max = 500. + RESOL/2
-    bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, 0.1)   
+    bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, RESOL)   
     nbin = len(bin_centers)
     
     ####
@@ -813,7 +813,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
     proc_coord = np.arange(nb_proc) # Can we have names here?
     MAT_OUT = xr.DataArray(MAT_OUTd, coords=[TIME2, ProcessNames, bin_centers] , 
-                           dims=['time', 'proc', 'bin'])
+                           dims=['time', 'proc', 'bins'])
 
     MAT_OUT.attrs['units'] = 'cm'
     MAT_OUT.attrs['long_name'] = 'Contains the pdfs of each sea ' + \
@@ -846,7 +846,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     if nl.Decomp:
         X_Decomp_da = xr.DataArray(X_Decomp, 
                                    coords=[NameComponents[1:], TIME2[ind_d], bin_centers], 
-                                   dims=['proc3', 'time_s', 'bin'])
+                                   dims=['proc3', 'time_s', 'bins'])
         X_Decomp_da.attrs['long_name'] = ('Provides the average decomposition '+
                                           'of total sea level into its individual '+ 
                                           'components')
