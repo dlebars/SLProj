@@ -140,7 +140,7 @@ ds['area_weighted_mean'] = area_mean
 ds.attrs['source_file'] = 'This NetCDF file was built from BuildTotalSeaLevelMaps.py'
 ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
 
-NameOutput = f'{DIR_OUT}SeaLevelMap_{namelist_name}_{SCE}_Perc{PercS}.nc'
+NameOutput = f'{DIR_OUT}SeaLevelMap_{namelist_name}_{SCE}_Perc{PercS}_{Year}.nc'
 if os.path.isfile(NameOutput):
     os.remove(NameOutput)
 ds.to_netcdf(NameOutput)
