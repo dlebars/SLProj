@@ -82,63 +82,14 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
     return X_O_out
 
 
-# def odyn_glob_knmi14(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, start_date, ye, \
-#       VAR, N, i_ys, Gam, NormD)
-#     '''Compute thermal expansion contribution to global sea level from KNMI'14 
-#     data. The data was processed from the CMIP5 dataset.'''
-#     nb_MOD = len(MOD)
+# odyn_glob_knmi14
 
-#     # Initialize the SSH matrix: (scenario, model, time (years))
-#     MAT   = np.zeros([nb_MOD,nb_y])
-#     print("WARNING !!!!!!! There seem to be an mistake in this script, variable fig"+ \
-#         " is not used, should be used instead of fi in loop?")
-
-#   do m=0,nb_MOD-1
-#     ;###
-#     fi      = addfile(DIR_O+MOD(m)+"_"+SCE+".nc","r")
-#     TIMEt   = fi->TIME
-#     TIMEt2  = cd_calendar(TIMEt,0)
-#     i_start = closest_val(start_date,TIMEt2(:,0))
-#     i_end   = closest_val(ye,TIMEt2(:,0))
-#     fig          = addfile(DIR_OG+MOD(m)+"_"+SCE+".nc","r")
-#     nb_y_loop = i_end - i_start +1
-#     if nb_y_loop.eq.nb_y then
-#       MAT(m,:) = fi->$VAR$(i_start:i_end,0,0)
-#       else
-#       MAT(m,:nb_y-2) = fi->$VAR$(i_start:i_end,0,0)
-#       MAT(m,nb_y-1)  = MAT(m,nb_y-2)
-#     end if
-#     MAT(m,:) = MAT(m,:) - avg(MAT(m,:20))
-#     delete(fi)
-#     delete(fig)
-#     delete(TIMEt)
-#     delete(TIMEt2)
-#   end do
-
-#   MATs     = MAT(:,i_ys:)*100   ; Convert from m to cm, and select dates after 2006
-#   ;Build the distribution
-#   X_O_m    = dim_avg_n(MATs,0)    ; Compute the inter-model mean for each time
-#   X_O_sd   = dim_stddev_n(MATs,0) ; Compute the inter-model standard deviation
-
-#   X_O    = new((/N,nb_y2/),float)
-#   do t=0,nb_y2-1
-#     X_O(s,:,t)    = X_O_m(s,t) + Gam*NormD(:)*X_O_sd(s,t)
-#   end do
-
-#   X_O_out = new((/3,N,nb_y2/),float)
-#   X_O_out(0,:,:) = X_O
-#   X_O_out(1,:,:) = X_O   ; In this case global is the same as total
-#   X_O_out(2,:,:) = 0     ; and anomaly is 0
-
-#   return X_O_out
-
-# end
 
 
 def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     '''Compute thermal expansion contribution to global sea level from IPCC data.'''
 
-    X_O_med   = np.zeros(nb_y2-1)     # These start in 2007 instead of 2006
+    X_O_med   = np.zeros(nb_y2-1) # These start in 2007 instead of 2006
     X_O_up    = np.zeros(nb_y2-1)
 
     f_med     = xr.open_dataset(DIR_IPCC+SCE+'_expansionmid.nc')
