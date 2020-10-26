@@ -482,7 +482,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             NormD  = np.random.normal(0, 1, N)
 
         if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'SROCC']:
-            #Build the distribution of global temperature for this contributor
+            # Build the distribution of global temperature for this contributor
             Td_a = misc.TempDist(TGLOBs, Tref_a, nl.GAM, NormD)
 
             if nl.CorrSMB:
@@ -590,8 +590,10 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
         elif nl.ANT_DYN == 'LEV14':
             print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+            
         elif nl.ANT_DYN == 'SROCC':
-            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+            X_ant = ant.ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME2, N)
+            
         elif nl.ANT_DYN == 'B19':
             # Build the percentiles to follow over time in the distributions
             # can be used to correlate this uncertainty with others.

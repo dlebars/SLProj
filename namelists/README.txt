@@ -34,6 +34,8 @@
 #                   "DC16"   DeConto and Pollard 2016
 #                   "DC16T"  DeConto and Pollard 2016 with with temperature sensitivity
 #                   "LEV14"  Levermann et al. 2014, only the 3 ice shelves models
+#                   "SROCC"  IPCC SROCC report, only defined for RCP8.5. For other 
+#                            scenarios SROCC is similar to AR5
 # GAM: Uncertainty of climate models
 # Possible choices: 1 for IPCC AR5
 #                   1.64 to convert the IPCC expert judgement that the 5-95 

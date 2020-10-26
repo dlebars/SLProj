@@ -70,3 +70,33 @@ def ant_dyn_knmi14(SCE, a1_up_a, a1_lo_a, start_date2, end_date2, TIME_loc, N):
         X_ant[:,t] = tau_ant[t] + np.exp(mu_ant[t] + sig_ant[t]*NormD2) 
 
     return X_ant
+
+def ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME_loc, N):
+    '''Compute the antarctic dynamics contribution to global sea level based on
+    the SROCC report. 
+    Assume here a normal distribution for simplicity, this is not the case in 
+    the SROCC report so it should be modified. Also only works for RCP8.5 for now. 
+    Assume that this contribution is independent from the others.'''
+    
+    if SCE == 'rcp85':
+        nb_y_loc = len(TIME_loc)
+        X_ant_m = 16
+        X_ant_sig = 14
+        NormD_loc = np.random.normal(0, 1, N)
+
+        X_anti = (a1_up_a+a1_lo_a)/2 + NormD_loc*(a1_up_a-a1_lo_a)/2
+        X_antf = np.zeros(N)
+        X_ant = np.zeros([N,nb_y_loc])
+        alp = 2  # Use a second order polynomial as for AR5
+        X_antf = X_ant_m + NormD_loc*X_ant_sig
+        
+        for t in range(nb_y_loc):
+            X_ant[:,t] =  ( X_anti*(TIME_loc[t]-TIME_loc[0]) + 
+                           ((X_antf - X_anti*(2100-TIME_loc[0])) / 
+                            (2100-TIME_loc[0])**alp) 
+                           * (TIME_loc[t]-TIME_loc[0])**alp )
+        
+    else:
+        print('ERROR: The ant_dyn_srocc function is only supported for rcp8.5')
+        
+    return X_ant
