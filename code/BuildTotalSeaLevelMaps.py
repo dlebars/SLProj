@@ -11,6 +11,7 @@
 # change and its contributions and export the results in a netCDF file.
 ################################################################################
 
+import os
 from datetime import datetime
 
 import numpy as np
@@ -59,6 +60,7 @@ p     = misc.perc_df(MAT_RES[-1,:], [PercS], fcomp.bins).loc[PercS].values[0]
 
 print('Contributors')
 print(X_Decomp.sel(bins=p, method='nearest').values)
+print('Sum of contributors')
 print(sum(X_Decomp.sel(bins=p, method='nearest').values))
 
 ### Ocean dynamics effects
@@ -128,7 +130,7 @@ ds['TotalSL'].attrs['long_name'] = (f'Total relative sea level change in {Year}'
 weights = np.cos(np.deg2rad(ds.lat))
 weights.name = 'weights'
 area_mean = ds['TotalSL'].weighted(weights).mean(('lon', 'lat'))
-print('Weighted average: of TotalSL:')
+print('Weighted average of TotalSL to test:')
 print(area_mean)
 
 ds['area_weighted_mean'] = area_mean
@@ -141,5 +143,5 @@ ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
 NameOutput = f'{DIR_OUT}SeaLevelMap_{namelist_name}_{SCE}_Perc{PercS}.nc'
 if os.path.isfile(NameOutput):
     os.remove(NameOutput)
-MAT_OUT_ds.to_netcdf(NameOutput)
+ds.to_netcdf(NameOutput)
 
