@@ -662,7 +662,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
                 X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, 7.4, 1.7, \
                                          UnifDd)
             elif nl.GRE == 'IPCC':
-                if SCE in ['rcp26', 'rcp45']:
+                if SCE in ['rcp26', 'rcp45', 'rcp60']:
                     Delta_gre_up_2100 = 6.3
                     Delta_gre_lo_2100 = 1.4
                 elif SCE == 'rcp85':
