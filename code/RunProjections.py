@@ -21,7 +21,7 @@ namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
 # Possible choices: AR5_glo, loc, B19_glo, KNMI14, B19_loc, AR5_glo_decomp, SROCC_glo_decomp 
-for namelist_name in ['SROCC_glo_decomp', ]:
+for namelist_name in ['AR5_loc', ]:
     
-    for SCE in ['rcp85']: # rcp26, rcp45, rcp60, rcp85
+    for SCE in ['rcp45']: # rcp26, rcp45, rcp60, rcp85
         mm.main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE)
