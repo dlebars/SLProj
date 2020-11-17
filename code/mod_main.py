@@ -226,8 +226,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     else:
         print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
     
-    TGLOB = misc.tglob_cmip5(nl.INFO, files, SCE, start_date, ye)
-    del(files)
+    TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.INFO)
 
     # Read TGLOB and compute reference temperaure for each model
     # The first two numbers are the beginning and end of the reference time period
@@ -588,8 +587,10 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
         elif nl.ANT_DYN == 'DC16T':
             print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+            
         elif nl.ANT_DYN == 'LEV14':
-            print('ERROR : ANT_DYN option '+ ANT_DYN + ' not yet implemented')
+            UnifDd = np.random.uniform(0, 1, N)
+            X_ant  = ant_dyn_lev14(SCE, MOD, ys, GAM, NormD, UnifDd, DIR_T, files)
             
         elif nl.ANT_DYN == 'SROCC':
             X_ant = ant.ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME2, N)

@@ -20,7 +20,7 @@ def temp_path_AR5(MOD, DIR_T, SCE):
             files.append(file_sel[0])
     return files
 
-def tglob_cmip5(INFO, files, SCE, start_date, ye):
+def tglob_cmip5( files, SCE, start_date, ye, INFO):
     '''Read the text files of monthly temperature for each CMIP5 model and store
     yearly averged values in and array'''
     nb_y = ye-start_date+1
