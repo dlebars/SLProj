@@ -103,11 +103,42 @@ def ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME_loc, N):
         
     return X_ant
 
-def ant_dyn_lev14(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_files):
-    '''Compute the antarctic dynamics contribution to global sea level as in 
-    Levermann et al 2014, using linear response functions'''
-
+def read_larmip_lrf(data_dir):
+    '''Read LARMIP Linear Response Functions'''
+    
     f = xr.open_dataset(f'{data_dir}LFR_Lev14/RFunctions.nc', decode_times=False)
+    ic_models = ['AIF', 'PS', 'PISM', 'SICO', 'UMISM']
+
+    for icm in ic_models:
+        RF_tmp = f[f'RF_{icm}'].assign_coords({'model' : icm})
+        RF_tmp = RF_tmp.expand_dims('model', axis=0)
+        try:
+            RF = xr.concat([RF, RF_tmp], dim='model', combine_attrs='drop')
+        except:
+            RF = RF_tmp
+
+    RF.name = 'RF'
+    
+    return RF
+
+def read_larmip_coeff(data_dir):
+    '''Read the coefficient scalling GMST to temperature around Antarctica'''
+    
+    f = xr.open_dataset(f'{data_dir}LFR_Lev14/RFunctions.nc', decode_times=False)
+    return f.coeff
+
+
+#def read_larmip2_lrf():
+
+def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_files, larmip_v):
+    '''Compute the antarctic dynamics contribution to global sea level as in 
+    Levermann et al 2014, using linear response functions.'''
+
+    model_corr = False # Introduces a correlation between input distribution 
+                       # UnifDd and the LRF model. Only implemented for the 
+                       # three LARMIP ice sheet models with ice shelves
+    nbLRF = 3 # Number of LRF to use. 3 or 5 for LARMIP
+
     nb_MOD = len(MOD)
     N = len(NormD)
     ye = 2100
@@ -120,18 +151,14 @@ def ant_dyn_lev14(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_file
     i_ysr_Lev = np.where(TIME == 1861 )[0][0]  # Reference time 1860 to 1880
     i_yer_Lev = np.where(TIME == 1880)[0][0]
     
-    ic_models = ['AIF', 'PS', 'PISM', 'SICO', 'UMISM']
+    if larmip_v == 'LARMIP':
+        RF = read_larmip_lrf(data_dir)
+        coeff = read_larmip_coeff(data_dir)
+    elif larmip_v == 'LARMIP2':
+        print('To do')
+    else:
+        print(f'ERROR: {larmip_v} value of larmip_v not implemented')
 
-    for icm in ic_models:
-        RF_tmp = f[f'RF_{icm}'].assign_coords({'model' : icm})
-        RF_tmp = RF_tmp.expand_dims('model', axis=0)
-        try:
-            RF = xr.concat([RF, RF_tmp], dim='model', combine_attrs='drop')
-        except:
-            RF = RF_tmp
-
-    RF.name = 'RF'
-    coeff = f.coeff
     nb_bass = len(RF.bass)
 
     TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, False)
@@ -157,19 +184,15 @@ def ant_dyn_lev14(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_file
     del(Td_Lev)
     del(Beta)
     
-    # TODO Include the following condition in an if statement
-    # Include a correlation between UnifDd and model selection
-    # This only works when only the 3 ice shelves models are used.
-    Rdist = np.zeros([N], dtype=int)
-    Rdist = 2
-    Rdist = np.where(UnifDd >= 0.33, 1, Rdist)
-    Rdist = np.where(UnifDd >= 0.67, 0, Rdist)
-    modelsel = Rdist # Select model
-    
-    # Do not include a correlation between UnifDd and model selection
-    # modelsel = toint(floor(random_uniform(0,3,N))) ; Select model (OLD NCL code)
+    if model_corr:
+        Rdist = np.zeros([N], dtype=int)
+        Rdist = 2
+        Rdist = np.where(UnifDd >= 0.33, 1, Rdist)
+        Rdist = np.where(UnifDd >= 0.67, 0, Rdist)
+        modelsel = Rdist # Select model
+    else:
+        modelsel = np.random.randint(0, nbLRF, N) # Select models
 
-    # Rq: Select 0,1,2 for shelf models and 3,4 for other models
     RF = RF.transpose('bass', 'model', 'time')
     RF = RF[:,modelsel,::-1]
     
