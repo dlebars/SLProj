@@ -2,9 +2,11 @@
 # func_ant.py: Defines functions to return probabilistic Antarctic contribution 
 #             to sea level
 ################################################################################
-#import func_misc as misc
 import numpy as np
 from scipy.stats import norm
+import xarray as xr
+
+import func_misc as misc
 
 def ant_smb_ar5(NormDl, fac, Td_a):
     '''Define Antarctic surface mass balance contribution to sea level as in IPCC 
@@ -100,3 +102,92 @@ def ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME_loc, N):
         print('ERROR: The ant_dyn_srocc function is only supported for rcp8.5')
         
     return X_ant
+
+def ant_dyn_lev14(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_files):
+    '''Compute the antarctic dynamics contribution to global sea level as in 
+    Levermann et al 2014, using linear response functions'''
+
+    f = xr.open_dataset(f'{data_dir}LFR_Lev14/RFunctions.nc', decode_times=False)
+    nb_MOD = len(MOD)
+    N = len(NormD)
+    ye = 2100
+    start_date = 1861 # This is different from other runs
+    Beta_low = 7 # Bounds to use for the basal melt rate,
+    Beta_high = 16 # units are m.a^(-1).K^(-1)
+    nb_y = ye - start_date + 1
+    TIME = np.arange(start_date,ye+1)
+    i_ys = np.where(TIME == start_date2)[0][0]
+    i_ysr_Lev = np.where(TIME == 1861 )[0][0]  # Reference time 1860 to 1880
+    i_yer_Lev = np.where(TIME == 1880)[0][0]
+    
+    ic_models = ['AIF', 'PS', 'PISM', 'SICO', 'UMISM']
+
+    for icm in ic_models:
+        RF_tmp = f[f'RF_{icm}'].assign_coords({'model' : icm})
+        RF_tmp = RF_tmp.expand_dims('model', axis=0)
+        try:
+            RF = xr.concat([RF, RF_tmp], dim='model', combine_attrs='drop')
+        except:
+            RF = RF_tmp
+
+    RF.name = 'RF'
+    coeff = f.coeff
+    nb_bass = len(RF.bass)
+
+    TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, False)
+    Tref_Lev = misc.Tref(1961, 1980, TGLOB, TIME)
+    # Build the distribution of global temperature for this process
+    Td_Lev = misc.TempDist(TGLOB, Tref_Lev, GAM, NormD)
+
+    # Random model number: 1-19
+    RMod = np.random.randint(0, 19, N) # Select random model indice (0 to 18)
+    AlpCoeff = coeff[:,RMod,0] # dim: bassin, N
+    del(RMod)   
+        
+    # Use following line if Beta should have some external dependence
+    #  Beta = Beta_low + UnifDd*(Beta_high - Beta_low) # Modify to obtain random_uniform(7,16,N)
+    Beta = np.random.uniform(Beta_low, Beta_high, N)
+
+    BMelt = np.zeros([nb_bass, N, nb_y])
+    for b in range(nb_bass):
+        for t in range(nb_y):
+            BMelt[b,:,t] = AlpCoeff[b,:]*Td_Lev[:,t]*Beta
+    
+    del(AlpCoeff)
+    del(Td_Lev)
+    del(Beta)
+    
+    # TODO Include the following condition in an if statement
+    # Include a correlation between UnifDd and model selection
+    # This only works when only the 3 ice shelves models are used.
+    Rdist = np.zeros([N], dtype=int)
+    Rdist = 2
+    Rdist = np.where(UnifDd >= 0.33, 1, Rdist)
+    Rdist = np.where(UnifDd >= 0.67, 0, Rdist)
+    modelsel = Rdist # Select model
+    
+    # Do not include a correlation between UnifDd and model selection
+    # modelsel = toint(floor(random_uniform(0,3,N))) ; Select model (OLD NCL code)
+
+    # Rq: Select 0,1,2 for shelf models and 3,4 for other models
+    RF = RF.transpose('bass', 'model', 'time')
+    RF = RF[:,modelsel,::-1]
+    
+    del(modelsel)
+
+    X_ant_b = np.zeros([nb_bass, N, nb_y])
+    for t in range(nb_y):
+        X_ant_b[:,:,t] = np.sum(RF[:,:,-1-t:]*BMelt[:,:,:t+1],2)
+
+    del(RF)
+    del(BMelt)
+
+    X_ant_b = X_ant_b*100 # Convert from m to cm
+    X_ant = np.sum(X_ant_b, 0) # Sum 4 bassins
+
+    # Remove the uncertainty at the beginning of the projection
+    ref = X_ant[:,i_ys-1]
+    for t in range(nb_y):
+        X_ant[:,t] = X_ant[:,t] - ref
+
+    return X_ant[:,i_ys:]
