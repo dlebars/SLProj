@@ -128,7 +128,12 @@ def read_larmip_coeff(data_dir):
     return f.coeff
 
 
-#def read_larmip2_lrf():
+def read_larmip2_lrf(data_dir):
+    '''Read LAMIP 2 Linear Response Functions downloaded from:
+    https://github.com/ALevermann/Larmip2019'''
+    
+    
+    return RF
 
 def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_files, larmip_v):
     '''Compute the antarctic dynamics contribution to global sea level as in 
@@ -137,7 +142,6 @@ def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_fil
     model_corr = False # Introduces a correlation between input distribution 
                        # UnifDd and the LRF model. Only implemented for the 
                        # three LARMIP ice sheet models with ice shelves
-    nbLRF = 3 # Number of LRF to use. 3 or 5 for LARMIP
 
     nb_MOD = len(MOD)
     N = len(NormD)
@@ -154,6 +158,7 @@ def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_fil
     if larmip_v == 'LARMIP':
         RF = read_larmip_lrf(data_dir)
         coeff = read_larmip_coeff(data_dir)
+        nbLRF = 3 # Number of LRF to use. 3 or 5 for LARMIP
     elif larmip_v == 'LARMIP2':
         print('To do')
     else:
