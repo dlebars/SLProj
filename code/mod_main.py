@@ -318,7 +318,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, \
+                X_Of = odyn.odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, \
                                      lat_S, lon_W, lon_E, start_date, ye, SSH_VAR, \
                                      N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'CMIP5':

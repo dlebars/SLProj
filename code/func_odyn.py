@@ -6,54 +6,48 @@ import numpy as np
 import xarray as xr
 from scipy.stats import norm
 
-def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
+def odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
              start_date, ye, SSH_VAR, N, i_ys, Gam, NormD):
     '''Compute the ocean dynamics and thermal expansion contribution to local sea
     level.'''
 
     nb_MOD = len(MOD)
+    nb_y = ye-start_date+1
 
     # Initialize the SSH matrix: (scenario, model, time (years))
     MAT   = np.zeros([nb_MOD,nb_y])
     MAT_G = np.zeros([nb_MOD,nb_y]) # Global mean steric effect
     MAT_A = np.zeros([nb_MOD,nb_y]) # Local dynamics
 
-    for m in range(0,nb_MOD):
-        fi      = xr.open_dataset(DIR_O + MOD[m] + '_' + SCE + '.nc')
-        fig     = xr.open_dataset(DIR_OG + MOD[m] + '_' + SCE + '.nc')
-        lon     = np.array(fi.longitude)  # Here we do not assume the models all 
-        lat     = np.array(fi.latitude)   # have the same grid, even though they DO
-        lat_Ni  = np.abs(lat_N - lat).argmin()
-        lat_Si  = np.abs(lat_S - lat).argmin()
-        lon_Wi  = np.abs(lon_W - lon).argmin()
-        lon_Ei  = np.abs(lon_E - lon).argmin()
-        TIMEt   = np.array(fi.TIME)
-        i_start = int(np.abs(start_date - fi['TIME.year']).argmin())
-        i_end   = int(np.abs(ye - fi['TIME.year']).argmin())
-        SSH     = fi[SSH_VAR][i_start:i_end+1,lat_Si:lat_Ni+1,lon_Wi:lon_Ei+1]
+    for m in range(nb_MOD):
+        fi = xr.open_dataset(f'{DIR_O}{MOD[m]}_{SCE}.nc', use_cftime=True)
+        fig = xr.open_dataset(f'{DIR_OG}{MOD[m]}_{SCE}.nc', use_cftime=True)
+        fi = fi.assign_coords(TIME=fi['TIME.year'])
+        fig = fig.assign_coords(time=fig['time.year']).squeeze()
+        SSH = fi[SSH_VAR].sel(TIME=slice(start_date,ye), 
+                              latitude=slice(lat_S,lat_N), 
+                              longitude=slice(lon_W,lon_E))
         print(SSH.shape)
-        nb_y_loop = i_end - i_start + 1
-        if nb_y_loop == nb_y:
-            MAT[m,:] = SSH.mean(axis=2).mean(axis=1)
+
+        if SSH.TIME[-1].values.item() == ye:
+            MAT[m,:] = SSH.mean(dim=['latitude', 'longitude'])
             #RQ: No scaling depending on the area, gives more weight to the southern
             #cell
-            MAT_G[m,:] = fig[SSH_VAR][i_start:i_end+1,0,0]
-        else: # For models that stop in 2099?
-            MAT[m, :nb_y-1] = SSH.mean(axis=2).mean(axis=1)
-            MAT[m,nb_y-1]    = MAT[m,nb_y-2]
-            MAT_G[m,:nb_y-1] = fig[SSH_VAR][i_start:i_end+1,0,0]
-            MAT_G[m,nb_y-1]  = MAT_G[m,nb_y-2]
+            MAT_G[m,:] = fig[SSH_VAR].sel(time=slice(start_date,ye))
+        else: # For models that stop in 2099
+            MAT[m, :nb_y-1] = SSH.mean(dim=['latitude', 'longitude'])
+            MAT[m,nb_y-1] = MAT[m,nb_y-2]
+            MAT_G[m,:nb_y-1] = fig[SSH_VAR].sel(time=slice(start_date,ye))
+            MAT_G[m,nb_y-1] = MAT_G[m,nb_y-2]
 
         # Remove the average SSH of the first 20 years from all models
         MAT[m,:] =  MAT[m,:] - MAT[m,:21].mean()
 
         MAT_G[m,:] = MAT_G[m,:] - MAT_G[m,:21].mean()
         MAT_A[m,:] = MAT[m,:] - MAT_G[m,:]
+        
         del(fi)
-        del(lon)
-        del(lat)
         del(SSH)
-        del(TIMEt)
 
     MATs     = MAT[:,i_ys:]*100   # Convert from m to cm
     MAT_Gs   = MAT_G[:,i_ys:]*100 # Convert from m to cm
@@ -69,7 +63,7 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
     X_O    = np.zeros([N,nb_y2])
     X_O_G  = np.zeros([N,nb_y2])
     X_O_A  = np.zeros([N,nb_y2])
-    for t in range(0,nb_y2):
+    for t in range(nb_y2):
         X_O[:,t]    = X_O_m[t] + Gam * NormD * X_O_sd[t]
         X_O_G[:,t]  = X_O_G_m[t] + Gam * NormD * X_O_G_sd[t]
         X_O_A[:,t]  = X_O_A_m[t] + Gam * NormD * X_O_A_sd[t]
@@ -80,7 +74,6 @@ def odyn_loc(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
     X_O_out[2,:,:] = X_O_A
 
     return X_O_out
-
 
 # odyn_glob_knmi14
 
