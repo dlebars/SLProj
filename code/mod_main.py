@@ -237,6 +237,8 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     Tref_ad  = misc.Tref(2000, 2000, TGLOB, TIME)   # Antarctic dynamics for DC16T
     Tref_b   = misc.Tref(2000, 2000, TGLOB, TIME)   # Reference for Bamber et al. 2019
     
+    ref_steric = [1986, 2005] # Reference period for steric sea level
+    
     i_ys   = np.where(TIME == ys)[0][0]
     TGLOBs = TGLOB[:,i_ys:]
     del(TGLOB)
@@ -320,7 +322,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             if nl.ODYN == 'KNMI':
                 X_Of = odyn.odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, \
                                      lat_S, lon_W, lon_E, start_date, ye, SSH_VAR, \
-                                     N, i_ys, nl.GAM, NormDT)
+                                     N, ys, nl.GAM, NormDT, nl.LowPass)
             elif nl.ODYN == 'CMIP5':
                 X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
         else:

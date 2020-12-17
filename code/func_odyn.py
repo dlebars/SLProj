@@ -40,13 +40,13 @@ def odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
     MAT_G = full_st_da.sel(time=slice(start_date,ye))
 
     MAT = MAT - MAT.sel(time=slice(start_date,start_date+20)).mean(dim='time')
-    MAT_G = MAT_G - MAT_G.sel(time=slice(start_date,start_date+20)).mean(dim='time')
-                        
-    MAT_A = MAT - MAT_G
-                
+    
     if LowPass:
-        #TODO
-        np.polyfit(x, MAT[m,:], 3)
+        fit_coeff = MAT.polyfit('time', 3)
+        MAT = xr.polyval(coord=MAT.time, coeffs=fit_coeff.polyfit_coefficients)
+    
+    MAT_G = MAT_G - MAT_G.sel(time=slice(start_date,start_date+20)).mean(dim='time')               
+    MAT_A = MAT - MAT_G
 
     # Select years after the reference period and convert from m to cm
     MAT = MAT.sel(time=slice(ys,None))*100
