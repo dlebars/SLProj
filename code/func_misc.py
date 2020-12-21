@@ -64,7 +64,7 @@ def Tref(ys, ye, TGLOB, TIME):
 
 def TempDist(TGLOBs, Tref, GAM, NormD):
     '''Build a distribution of global temperature for a contributor (reference periods 
-     are different of each contributors)'''
+     are different for each contributors)'''
     N        = len(NormD)
     nb_MOD   = TGLOBs.shape[0]
     nb_y2    = TGLOBs.shape[1]
