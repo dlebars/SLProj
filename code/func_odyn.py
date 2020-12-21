@@ -8,12 +8,11 @@ from scipy.stats import norm
 
 #Change inputs -> make it easy to change the reference period
 def odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
-             start_date, ye, SSH_VAR, N, ys, Gam, NormD, LowPass):
+             ref_steric, ye, SSH_VAR, N, ys, Gam, NormD, LowPass):
     '''Compute the ocean dynamics and thermal expansion contribution to local sea
     level.'''
 
     nb_MOD = len(MOD)
-    nb_y = ye-start_date+1
 
     # Read sterodynamics and global steric contributions
     for m in range(nb_MOD):
@@ -32,20 +31,20 @@ def odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
             full_st_da = xr.concat([full_st_da, st_da], dim='model')
     
     full_sd_da = full_sd_da.rename({'TIME':'time'})
-    full_sd_da = full_sd_da.sel(time=slice(start_date,ye), 
+    full_sd_da = full_sd_da.sel(time=slice(ref_steric[0],ye), 
                             latitude=slice(lat_S,lat_N), 
                             longitude=slice(lon_W,lon_E))
     
     MAT = full_sd_da.mean(dim=['latitude', 'longitude'])
-    MAT_G = full_st_da.sel(time=slice(start_date,ye))
+    MAT_G = full_st_da.sel(time=slice(ref_steric[0],ye))
 
-    MAT = MAT - MAT.sel(time=slice(start_date,start_date+20)).mean(dim='time')
+    MAT = MAT - MAT.sel(time=slice(ref_steric[0],ref_steric[1])).mean(dim='time')
     
     if LowPass:
         fit_coeff = MAT.polyfit('time', 3)
         MAT = xr.polyval(coord=MAT.time, coeffs=fit_coeff.polyfit_coefficients)
     
-    MAT_G = MAT_G - MAT_G.sel(time=slice(start_date,start_date+20)).mean(dim='time')               
+    MAT_G = MAT_G - MAT_G.sel(time=slice(ref_steric[0],ref_steric[1])).mean(dim='time')               
     MAT_A = MAT - MAT_G
 
     # Select years after the reference period and convert from m to cm

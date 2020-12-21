@@ -321,12 +321,13 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         if nl.LOC:
             if nl.ODYN == 'KNMI':
                 X_Of = odyn.odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, \
-                                     lat_S, lon_W, lon_E, start_date, ye, SSH_VAR, \
+                                     lat_S, lon_W, lon_E, ref_steric, ye, SSH_VAR, \
                                      N, ys, nl.GAM, NormDT, nl.LowPass)
             elif nl.ODYN == 'CMIP5':
                 X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
         else:
             if nl.ODYN == 'KNMI':
+                # !!! Solve the start_date issue before use: Use ref_steric instead
                 X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, \
                                       start_date, ye, SSH_VAR, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'IPCC':
