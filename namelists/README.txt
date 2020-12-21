@@ -67,6 +67,9 @@
 # NoU_Gl: If True, remove Glacier and ice caps uncertainty
 # Decomp: Save the decomposition of each total sea level value into the average 
 #         components that form it. SaveAllSamples needs to be true.
+# LowPass: If true filter the time series of stero-dynamics and GMST with a 
+#          second order polynomial fit.
+#          Default option: False
 ################################################################################
 Example of namelist file:
 INFO = True
@@ -89,3 +92,4 @@ NoU_G = False
 NoU_A = False
 NoU_Gl = False
 Decomp = False
+LowPass = False
