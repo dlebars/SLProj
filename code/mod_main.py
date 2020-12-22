@@ -31,8 +31,9 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     nl = importlib.import_module('namelist_'+namelist_name)
 
     ROOT = '/Users/dewilebars/Projects/Project_ProbSLR/Data_Proj/'
-    DIR_T = ROOT+'Data_AR5/Tglobal/'
-    DIR_IPCC = ROOT+'Data_AR5/Final_Projections/'
+    DIR_T = f'{ROOT}Data_AR5/Tglobal/'
+    DIR_IPCC = f'{ROOT}Data_AR5/Final_Projections/'
+    DIR_CMIP = '../../CMIP_SeaLevel/outputs/'
     DIR_OUT = '../outputs/'       # Output directory
     
     if nl.LOC:
@@ -320,7 +321,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, \
+                X_Of = odyn.odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, \
                                      lat_S, lon_W, lon_E, ref_steric, ye, SSH_VAR, \
                                      N, ys, nl.GAM, NormDT, nl.LowPass)
             elif nl.ODYN == 'CMIP5':
