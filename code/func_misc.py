@@ -194,3 +194,25 @@ def finger1D(lats, lons, lat1D, lon1D, fingerprint):
         output = fingerprint[:, ind[0], ind[1]]
 
     return output
+
+def rotate_longitude(ds, name_lon):
+
+    ds = ds.assign_coords({name_lon:(((ds[name_lon] + 180 ) % 360) - 180)})
+    ds = ds.sortby(ds[name_lon])
+
+    return ds
+
+def which_mip(sce):
+    '''From input scenario return the MIP is corresponds to'''
+    
+    mip_dic = {'ssp119':'cmip6',
+           'ssp126':'cmip6',
+           'ssp245':'cmip6',
+           'ssp370':'cmip6',
+           'ssp585':'cmip6', 
+           'rcp26':'cmip5', 
+           'rcp45':'cmip5',
+           'rcp60':'cmip5',
+           'rcp85':'cmip5'}
+    
+    return mip_dic[sce]
