@@ -6,13 +6,16 @@ import numpy as np
 import xarray as xr
 from scipy.stats import norm
 
+import func_misc as misc
+
 #Change inputs -> make it easy to change the reference period
-def odyn_loc(SCE, MOD, nb_y2, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
+def odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
              ref_steric, ye, SSH_VAR, N, ys, Gam, NormD, LowPass):
     '''Compute the ocean dynamics and thermal expansion contribution to local sea
-    level.'''
+    level using KNMI14 files.'''
 
     nb_MOD = len(MOD)
+    nb_y2 = ye - ys +1
 
     # Read sterodynamics and global steric contributions
     for m in range(nb_MOD):
@@ -112,4 +115,82 @@ def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
 
 # read_odyn_cmip5
 
-# odyn_cmip5
+def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E, 
+              ref_steric, ye, N, ys, Gam, NormD, LowPass):
+    '''Read the CMIP5 and CMIP6 global steric and ocean dynamics contribution
+    and compute a probability distribution'''
+    
+    mip = misc.which_mip(SCE)
+    nb_y2 = ye - ys +1
+
+    if mip == 'cmip5':
+        # Change the name of files to avoid this if
+        zos_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/CMIP5_zos_{SCE}_*.nc')
+    else:
+        zos_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/{mip}_zos_{SCE}_*.nc')
+        
+    zos_ds = misc.rotate_longitude(zos_ds, 'lon')
+    
+    full_st_da = xr.open_dataset(f'{DIR_CMIP}/{mip}_SeaLevel_{SCE}_zostoga_1986_2100.nc')
+    
+    # What was changed?
+    # latitude, longitude -> lat, lon
+    # Data already in cm
+    # Last year is 2099 instead of 2100 for KNMI14
+    # No need to remove reference period, already done
+    # In KNMI14 steric needs to be removed, here it needs to be added
+    
+    full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(time=slice(ref_steric[0],ye), 
+                            lat=slice(lat_S,lat_N), 
+                            lon=slice(lon_W,lon_E))
+    
+    # Convert from m to cm
+    MAT_G = full_st_da['zostoga_corrected'].sel(time=slice(ref_steric[0],ye))*100
+    
+    # There are more models available for zos than for zostoga
+    # We select only the intersection here, assume all models available for zos 
+    # is also available for zostoga (it might not happen sometimes then list 
+    # intersection should be used)
+    MAT_A = full_sd_da.sel(model=MAT_G.model).mean(dim=['lat', 'lon'])
+    
+    MAT = MAT_A + MAT_G
+    
+    if LowPass:
+        fit_coeff = MAT.polyfit('time', 3)
+        MAT = xr.polyval(coord=MAT.time, coeffs=fit_coeff.polyfit_coefficients)
+
+    # Select years after the reference period
+    MAT = MAT.sel(time=slice(ys,None))
+    MAT_Gs = MAT_G.sel(time=slice(ys,None))
+    MAT_As = MAT_A.sel(time=slice(ys,None))
+    
+    # Build the distributions
+    # If a model has missing data it is not included in the mean and standard deviation.
+    # Another possibility would be to fill the missing data first.
+    X_O_m = np.array(MAT.mean(dim='model')) # Compute the inter-model mean for each time
+    X_O_sd = np.array(MAT.std(dim='model')) # Compute the inter-model standard deviation
+    X_O_G_m = np.array(MAT_Gs.mean(dim='model'))
+    X_O_G_sd = np.array(MAT_Gs.std(dim='model'))
+    X_O_A_m = np.array(MAT_As.mean(dim='model'))
+    X_O_A_sd = np.array(MAT_As.std(dim='model'))
+
+    X_O = np.zeros([N,nb_y2])
+    X_O_G = np.zeros([N,nb_y2])
+    X_O_A = np.zeros([N,nb_y2])
+    for t in range(nb_y2-1):
+        X_O[:,t]   = X_O_m[t] + Gam * NormD * X_O_sd[t]
+        X_O_G[:,t] = X_O_G_m[t] + Gam * NormD * X_O_G_sd[t]
+        X_O_A[:,t] = X_O_A_m[t] + Gam * NormD * X_O_A_sd[t]
+
+    # Code needs data for 2100 but available CMIP5 stops in 2099.5
+    # Extrapollate by duplicating the last value -> !!! Think of something better
+    X_O[:,nb_y2-1] = X_O[:,nb_y2-2]
+    X_O_G[:,nb_y2-1] = X_O_G[:,nb_y2-2]
+    X_O_A[:,nb_y2-1] = X_O_A[:,nb_y2-2]
+    
+    X_O_out = np.zeros([3,N,nb_y2])
+    X_O_out[0,:,:] = X_O
+    X_O_out[1,:,:] = X_O_G
+    X_O_out[2,:,:] = X_O_A
+
+    return X_O_out
