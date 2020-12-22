@@ -156,9 +156,23 @@ def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E,
     MAT = MAT_A + MAT_G
     
     if LowPass:
-        fit_coeff = MAT.polyfit('time', 3)
-        MAT = xr.polyval(coord=MAT.time, coeffs=fit_coeff.polyfit_coefficients)
+        fit_coeff = MAT.polyfit('time', 2)
+        new_time = xr.DataArray( np.arange(ys,ye+1)+0.5, dims='time', 
+                        coords=[np.arange(ys,ye+1)+0.5], name='time' )
+        MAT = xr.polyval(coord=new_time, 
+                         coeffs=fit_coeff.polyfit_coefficients)
+        
+        if ye>(full_sd_da.time[-1]+1):
+            fit_coeff = MAT_G.polyfit('time', 2)
+            MAT_G = xr.polyval(coord=new_time, 
+                               coeffs=fit_coeff.polyfit_coefficients)
+            MAT_A = MAT - MAT_G
 
+    print('MAT.shape: ')
+    print(MAT.shape)
+    print('MAT.time[-1]+1 : ')
+    print(MAT.time[-1]+1)
+            
     # Select years after the reference period
     MAT = MAT.sel(time=slice(ys,None))
     MAT_Gs = MAT_G.sel(time=slice(ys,None))
