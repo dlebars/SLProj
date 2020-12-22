@@ -24,7 +24,7 @@ def tglob_cmip5( files, SCE, start_date, ye, INFO):
     '''Read the text files of monthly temperature for each CMIP5 model and store
     yearly averged values in and array'''
     nb_y = ye-start_date+1
-    nb_MOD    = len(files)
+    nb_MOD = len(files)
     if INFO:
         print('Number of models used for scenario '+ SCE + ' : ' + str(nb_MOD))
         print('Models path: ')
@@ -40,7 +40,7 @@ def tglob_cmip5( files, SCE, start_date, ye, INFO):
         dim_t    = len(time)
         i_start  = np.where(time == start_date)[0][0]
         i_end    = np.where(time == ye)[0][0]
-        TGLOB[m, :i_end + 1 - i_start] = TEMP.iloc[i_start:i_end+1, 1:].mean(axis=1)   
+        TGLOB[m, :i_end + 1 - i_start] = TEMP.iloc[i_start:i_end+1, 1:].mean(axis=1)
         # !Data is in degree Kelvin
         #### Issue of missing temperature value for rcp26 after 2100 for this scenario
         # it is ok to assume it is constant after 2100
