@@ -1,10 +1,12 @@
 ###############################################################################
 # func_misc.py: Miscellaneous functions
 ###############################################################################
+import glob
+
 import numpy as np
 from scipy.stats import norm
 import pandas as pd
-import glob
+import xarray as xr
 
 def temp_path_AR5(MOD, DIR_T, SCE):
     files     = []
@@ -22,65 +24,51 @@ def temp_path_AR5(MOD, DIR_T, SCE):
 
 def tglob_cmip5( files, SCE, start_date, ye, INFO):
     '''Read the text files of monthly temperature for each CMIP5 model and store
-    yearly averged values in and array'''
+    yearly averged values in and array.
+    Output data is in degree Kelvin'''
+    
     nb_y = ye-start_date+1
-    nb_MOD = len(files)
+
     if INFO:
-        print('Number of models used for scenario '+ SCE + ' : ' + str(nb_MOD))
+        print('Number of models used for scenario '+ SCE + ' : ' + str(len(files)))
         print('Models path: ')
         print("\n".join(files))
-    
-    TGLOB    = np.zeros([nb_MOD, nb_y])
+
     col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
                  'Sep', 'Oct', 'Nov', 'Dec']
-    for m in range(0,nb_MOD):
+    
+    for m in range(0,len(files)):
         TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, \
                                names=col_names)
-        time     = TEMP['Year'][:]
-        dim_t    = len(time)
-        i_start  = np.where(time == start_date)[0][0]
-        i_end    = np.where(time == ye)[0][0]
-        TGLOB[m, :i_end + 1 - i_start] = TEMP.iloc[i_start:i_end+1, 1:].mean(axis=1)
-        # !Data is in degree Kelvin
-        #### Issue of missing temperature value for rcp26 after 2100 for this scenario
-        # it is ok to assume it is constant after 2100
-        if (SCE == 'rcp26') and (ye > 2100):
-            i2100 = np.where(time == 2099)
-            print(i2100)
-            TGLOB[m,i2100-i_start : ] = TGLOB[m,i2100-i_start]
-        del(TEMP)
-        del(time)
+        TEMP = TEMP.set_index('Year')
+        TGLOBi = xr.DataArray(TEMP.mean(axis=1))
+        mod = files[m][86:-17] # Select model names from path
+        TGLOBi = TGLOBi.expand_dims({'model':[mod]})
+
+        if m==0:
+            TGLOB = TGLOBi
+        else:
+            TGLOB = xr.concat([TGLOB, TGLOBi], dim='model')
+
+    TGLOB = TGLOB.rename({'Year':'time'})
+    TGLOB = TGLOB.sel(time=slice(start_date,ye))
+
     return TGLOB
 
-def Tref(ys, ye, TGLOB, TIME):
-    '''Compute the reference temperature for a specific contributor'''
-    nb_MOD = TGLOB.shape[0]
-    i_ysr  = np.where(TIME == ys)[0][0]
-    i_yer  = np.where(TIME == ye)[0][0]
-    Tref   = np.zeros(nb_MOD)
-    for m in range(0,nb_MOD):
-        Tref[m] = TGLOB[m,i_ysr:i_yer+1].mean()
-    return Tref
+def normal_distrib(model_ts, GAM, NormD):
+    '''Build a normal distribution for a contributor'''
+    
+    N = len(NormD)
+    nb_y2 = len(model_ts.time)
 
-def TempDist(TGLOBs, Tref, GAM, NormD):
-    '''Build a distribution of global temperature for a contributor (reference periods 
-     are different for each contributors)'''
-    N        = len(NormD)
-    nb_MOD   = TGLOBs.shape[0]
-    nb_y2    = TGLOBs.shape[1]
+    em  = model_ts.mean(dim='model')
+    esd = model_ts.std(dim='model')
 
-    TGLOBl   = np.zeros([nb_MOD, nb_y2])
-    for m in range(0, nb_MOD):
-        TGLOBl[m, :]    = TGLOBs[m, :] - Tref[m]
+    nd = np.zeros([N, nb_y2])
+    for t in range(nb_y2):
+        nd[:,t]  = em[t].values + GAM * NormD * esd[t].values
 
-    TGLOB_m  = TGLOBl.mean(axis=0) # Compute the inter-model mean for each time
-    TGLOB_sd = TGLOBl.std(axis=0)  # Compute the inter-model standard deviation
-
-    Td       = np.zeros([N, nb_y2])
-    for t in range(0, nb_y2):
-        Td[:,t]  = TGLOB_m[t] + GAM * NormD * TGLOB_sd[t]
-
-    return Td
+    return nd
 
 def landw_ar5(ys, TIME2, N):
     '''Land water contribution to sea level as in IPCC AR5. Second order polynomial to 

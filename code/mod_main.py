@@ -28,7 +28,9 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
                 - Iverse barometer effect 
     """
     
-    nl = importlib.import_module('namelist_'+namelist_name)
+    print('#### Starting a new computation ##################################')
+    print(f'Using namelist_{namelist_name}')
+    nl = importlib.import_module(f'namelist_{namelist_name}')
 
     ROOT = '/Users/dewilebars/Projects/Project_ProbSLR/Data_Proj/'
     DIR_T = f'{ROOT}Data_AR5/Tglobal/'
@@ -213,7 +215,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             print('Groundwater change (F_gw2):')
             print(F_gw2)
         
-    ###############################################################################
+    ###########################################################################
     if nl.INFO:
         print("### Read Tglob             #################")
     
@@ -228,21 +230,20 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
     
     TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.INFO)
+    TGLOBs = TGLOB.sel(time=slice(ys,None))
 
-    # Read TGLOB and compute reference temperaure for each model
-    # The first two numbers are the beginning and end of the reference time period
-    # to take the reference global temperature
-    Tref_gic = misc.Tref(1986, 2005, TGLOB, TIME)   # Glaciers and Ice Caps
-    Tref_g   = misc.Tref(1980, 1999, TGLOB, TIME)   # Greenland SMB
-    Tref_a   = misc.Tref(1985, 2005, TGLOB, TIME)   # Antarctic SMB
-    Tref_ad  = misc.Tref(2000, 2000, TGLOB, TIME)   # Antarctic dynamics for DC16T
-    Tref_b   = misc.Tref(2000, 2000, TGLOB, TIME)   # Reference for Bamber et al. 2019
+    # Compute the temperature anomalies for each process using a different 
+    # reference temperature
+    T_gic = TGLOBs - TGLOB.sel(time=slice(1986,2005)).mean(dim='time') # Glaciers and Ice Caps
+    T_g = TGLOBs - TGLOB.sel(time=slice(1980,1999)).mean(dim='time') # Greenland SMB
+    T_a = TGLOBs - TGLOB.sel(time=slice(1985,2005)).mean(dim='time') # Antarctic SMB
+    T_ad = TGLOBs - TGLOB.sel(time=2000) # Antarctic dynamics for DC16T
+    T_b = TGLOBs - TGLOB.sel(time=2000) # Bamber et al. 2019
     
     ref_steric = [1986, 2005] # Reference period for steric sea level
     
-    i_ys   = np.where(TIME == ys)[0][0]
-    TGLOBs = TGLOB[:,i_ys:]
     del(TGLOB)
+    del(TGLOBs)
     
     ##############################################################################
     # Start loop 
@@ -325,7 +326,8 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
                                      lat_S, lon_W, lon_E, ref_steric, ye, SSH_VAR, \
                                      N, ys, nl.GAM, NormDT, nl.LowPass)
             elif nl.ODYN == 'CMIP5':
-                X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
+                X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E, 
+                                      ref_steric, ye, N, ys, nl.GAM, NormDT, nl.LowPass)
         else:
             if nl.ODYN == 'KNMI':
                 # !!! Solve the start_date issue before use: Use ref_steric instead
@@ -388,7 +390,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             NormD  = np.random.normal(0, 1, N)
 
         #Build the distribution of global temperature for this process
-        Td_gic = misc.TempDist(TGLOBs, Tref_gic, nl.GAM, NormD)
+        Td_gic = misc.normal_distrib(T_gic, nl.GAM, NormD)
 
         NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept 
                                               #for correlation
@@ -431,7 +433,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
         if nl.GRE in ['IPCC', 'KNMI14']:
             #Build the distribution of global temperature for this contributor
-            Td_g  = misc.TempDist(TGLOBs, Tref_g, nl.GAM, NormD)
+            Td_g  = misc.normal_distrib(T_g, nl.GAM, NormD)
             if nl.CorrSMB:
                 NormDl = NormDs
             else:
@@ -445,7 +447,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             #can be used to correlate this uncertainty with others.
             UnifP_GIS = np.random.uniform(0, 1, N)
 
-            Td_b  = misc.TempDist(TGLOBs, Tref_b, nl.GAM, NormD)
+            Td_b  = misc.normal_disctib(T_b, nl.GAM, NormD)
             X_gsmb = b19.Bamber19('GIS', UnifP_GIS, [a1_lo_g, a1_up_g], ys, Td_b)
             X_gsmb = X_gsmb + 0.3    # Contribution between 1995 and 2005 in mm
             del(UnifP_GIS)
@@ -486,7 +488,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
         if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'SROCC']:
             # Build the distribution of global temperature for this contributor
-            Td_a = misc.TempDist(TGLOBs, Tref_a, nl.GAM, NormD)
+            Td_a = misc.normal_distrib(T_a, nl.GAM, NormD)
 
             if nl.CorrSMB:
                 NormDl = NormDs
@@ -605,7 +607,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             UnifP_WAIS = np.random.uniform(0, 1, N)
             UnifP_EAIS = np.random.uniform(0, 1, N)
 
-            Td_b  = misc.TempDist(TGLOBs, Tref_b, nl.GAM, NormD)
+            Td_b  = misc.normal_distrib(T_b, nl.GAM, NormD)
             X_ant_wais = b19.Bamber19('WAIS', UnifP_WAIS, [a1_lo_a, a1_up_a], ys, Td_b)
             X_ant_eais = b19.Bamber19('EAIS', UnifP_EAIS, [0, 0], ys, Td_b)
             X_ant = X_ant_wais + X_ant_eais

@@ -1,7 +1,7 @@
 INFO = True
 LOC = True
 IBarE = False
-TEMPf = 'AR5'
+TEMPf = 'all'
 GRE = 'IPCC'
 ODYN = 'KNMI'
 ANT_DYN = 'KNMI14'

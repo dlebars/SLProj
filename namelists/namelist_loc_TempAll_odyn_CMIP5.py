@@ -1,9 +1,9 @@
 INFO = True
 LOC = True
 IBarE = False
-TEMPf = 'AR5'
+TEMPf = 'all'
 GRE = 'IPCC'
-ODYN = 'KNMI'
+ODYN = 'CMIP5'
 ANT_DYN = 'KNMI14'
 GAM = 1
 COMB = 'IPCC'
