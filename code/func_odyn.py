@@ -50,33 +50,14 @@ def odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
     MAT_G = MAT_G - MAT_G.sel(time=slice(ref_steric[0],ref_steric[1])).mean(dim='time')               
     MAT_A = MAT - MAT_G
 
-    # Select years after the reference period and convert from m to cm
-    MAT = MAT.sel(time=slice(ys,None))*100
-    MAT_Gs = MAT_G.sel(time=slice(ys,None))*100
-    MAT_As = MAT_A.sel(time=slice(ys,None))*100
+    list_da = [MAT, MAT_G, MAT_A]
     
-    # Build the distributions
-    # If a model has missing data it is not included in the mean and standard deviation.
-    # Another possibility would be to fill the missing data first.
-    X_O_m = np.array(MAT.mean(dim='model')) # Compute the inter-model mean for each time
-    X_O_sd = np.array(MAT.std(dim='model')) # Compute the inter-model standard deviation
-    X_O_G_m = np.array(MAT_Gs.mean(dim='model'))
-    X_O_G_sd = np.array(MAT_Gs.std(dim='model'))
-    X_O_A_m = np.array(MAT_As.mean(dim='model'))
-    X_O_A_sd = np.array(MAT_As.std(dim='model'))
-
-    X_O = np.zeros([N,nb_y2])
-    X_O_G = np.zeros([N,nb_y2])
-    X_O_A = np.zeros([N,nb_y2])
-    for t in range(nb_y2):
-        X_O[:,t]   = X_O_m[t] + Gam * NormD * X_O_sd[t]
-        X_O_G[:,t] = X_O_G_m[t] + Gam * NormD * X_O_G_sd[t]
-        X_O_A[:,t] = X_O_A_m[t] + Gam * NormD * X_O_A_sd[t]
-
     X_O_out = np.zeros([3,N,nb_y2])
-    X_O_out[0,:,:] = X_O
-    X_O_out[1,:,:] = X_O_G
-    X_O_out[2,:,:] = X_O_A
+    
+    for idx, da in enumerate(list_da):
+        # Select years after the reference period and convert from m to cm
+        da = da.sel(time=slice(ys,None))*100
+        X_O_out[idx,:,:] = misc.normal_distrib(da, Gam, NormD)
 
     return X_O_out
 
@@ -133,7 +114,7 @@ def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E,
     
     full_st_da = xr.open_dataset(f'{DIR_CMIP}/{mip}_SeaLevel_{SCE}_zostoga_1986_2100.nc')
     
-    # What was changed?
+    # What was changed compared to knmi code above?
     # latitude, longitude -> lat, lon
     # Data already in cm
     # Last year is 2099 instead of 2100 for KNMI14
@@ -166,44 +147,20 @@ def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E,
             MAT_G = xr.polyval(coord=new_time, 
                                coeffs=fit_coeff.polyfit_coefficients)
             MAT_A = MAT - MAT_G
-
-    print('MAT.shape: ')
-    print(MAT.shape)
-    print('MAT.time[-1]+1 : ')
-    print(MAT.time[-1]+1)
-            
-    # Select years after the reference period
-    MAT = MAT.sel(time=slice(ys,None))
-    MAT_Gs = MAT_G.sel(time=slice(ys,None))
-    MAT_As = MAT_A.sel(time=slice(ys,None))
     
-    # Build the distributions
-    # If a model has missing data it is not included in the mean and standard deviation.
-    # Another possibility would be to fill the missing data first.
-    X_O_m = np.array(MAT.mean(dim='model')) # Compute the inter-model mean for each time
-    X_O_sd = np.array(MAT.std(dim='model')) # Compute the inter-model standard deviation
-    X_O_G_m = np.array(MAT_Gs.mean(dim='model'))
-    X_O_G_sd = np.array(MAT_Gs.std(dim='model'))
-    X_O_A_m = np.array(MAT_As.mean(dim='model'))
-    X_O_A_sd = np.array(MAT_As.std(dim='model'))
-
-    X_O = np.zeros([N,nb_y2])
-    X_O_G = np.zeros([N,nb_y2])
-    X_O_A = np.zeros([N,nb_y2])
-    for t in range(nb_y2-1):
-        X_O[:,t]   = X_O_m[t] + Gam * NormD * X_O_sd[t]
-        X_O_G[:,t] = X_O_G_m[t] + Gam * NormD * X_O_G_sd[t]
-        X_O_A[:,t] = X_O_A_m[t] + Gam * NormD * X_O_A_sd[t]
-
-    # Code needs data for 2100 but available CMIP5 stops in 2099.5
-    # Extrapollate by duplicating the last value -> !!! Think of something better
-    X_O[:,nb_y2-1] = X_O[:,nb_y2-2]
-    X_O_G[:,nb_y2-1] = X_O_G[:,nb_y2-2]
-    X_O_A[:,nb_y2-1] = X_O_A[:,nb_y2-2]
+    list_da = [MAT, MAT_G, MAT_A]
     
     X_O_out = np.zeros([3,N,nb_y2])
-    X_O_out[0,:,:] = X_O
-    X_O_out[1,:,:] = X_O_G
-    X_O_out[2,:,:] = X_O_A
+    
+    for idx, da in enumerate(list_da):
+        # Select years after the reference period
+        da = da.sel(time=slice(ys,None))
+        
+        # Add a year at the end because data is available until 2099 while code 
+        # goes up to 2100
+        dal = da.isel(time=-1).assign_coords(time=da.time[-1]+1) # Last year with new coords
+        da = xr.concat([da, dal], dim='time')
+        
+        X_O_out[idx,:,:] = misc.normal_distrib(da, Gam, NormD)
 
     return X_O_out
