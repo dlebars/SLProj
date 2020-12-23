@@ -148,10 +148,9 @@ def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E,
     MAT_G = full_st_da['zostoga_corrected'].sel(time=slice(ref_steric[0],ye))*100
     
     # There are more models available for zos than for zostoga
-    # We select only the intersection here, assume all models available for zos 
-    # is also available for zostoga (it might not happen sometimes then list 
-    # intersection should be used)
-    MAT_A = full_sd_da.sel(model=MAT_G.model).mean(dim=['lat', 'lon'])
+    # Here we select the intersection
+    model_list = list(set(full_sd_da.model.values) & set(MAT_G.model.values))
+    MAT_A = full_sd_da.sel(model=model_list).mean(dim=['lat', 'lon'])
     
     MAT = MAT_A + MAT_G
     
