@@ -61,12 +61,14 @@ def normal_distrib(model_ts, GAM, NormD):
     N = len(NormD)
     nb_y2 = len(model_ts.time)
 
-    em  = model_ts.mean(dim='model')
-    esd = model_ts.std(dim='model')
+    em  = model_ts.mean(dim='model').values
+    esd = model_ts.std(dim='model').values
 
-    nd = np.zeros([N, nb_y2])
-    for t in range(nb_y2):
-        nd[:,t]  = em[t].values + GAM * NormD * esd[t].values
+    em = em[np.newaxis, :]
+    esd = esd[np.newaxis, :]
+    NormD = NormD[:, np.newaxis]
+    
+    nd = em + GAM * NormD * esd
 
     return nd
 
