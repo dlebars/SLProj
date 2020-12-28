@@ -10,12 +10,16 @@ import func_misc as misc
 
 #Change inputs -> make it easy to change the reference period
 def odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
-             ref_steric, ye, SSH_VAR, N, ys, Gam, NormD, LowPass):
+             ref_steric, ye, N, ys, Gam, NormD, LowPass):
     '''Compute the ocean dynamics and thermal expansion contribution to local sea
     level using KNMI14 files.'''
 
     nb_MOD = len(MOD)
     nb_y2 = ye - ys +1
+    
+    #For KNMI files the SSH has a different name for each scenario
+    SSH_VAR_dic = {'rcp45':'ZOSH45', 'rcp85':'ZOS85'}
+    SSH_VAR = SSH_VAR_dic[SCE]
 
     # Read sterodynamics and global steric contributions
     for m in range(nb_MOD):
