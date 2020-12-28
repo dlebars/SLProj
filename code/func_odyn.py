@@ -9,13 +9,14 @@ from scipy.stats import norm
 import func_misc as misc
 
 #Change inputs -> make it easy to change the reference period
-def odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
+def odyn_loc(SCE, MOD, DIR_O, DIR_OG, LOC, \
              ref_steric, ye, N, ys, Gam, NormD, LowPass):
     '''Compute the ocean dynamics and thermal expansion contribution to local sea
     level using KNMI14 files.'''
 
     nb_MOD = len(MOD)
     nb_y2 = ye - ys +1
+    lat_N, lat_S, lon_W, lon_E = LOC
     
     #For KNMI files the SSH has a different name for each scenario
     SSH_VAR_dic = {'rcp45':'ZOSH45', 'rcp85':'ZOS85'}
@@ -68,7 +69,6 @@ def odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, lat_S, lon_W, lon_E, \
 # odyn_glob_knmi14
 
 
-
 def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     '''Compute thermal expansion contribution to global sea level from IPCC data.'''
 
@@ -97,16 +97,15 @@ def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     return X_O_out
 
 
-
 # read_odyn_cmip5
 
-def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E, 
-              ref_steric, ye, N, ys, Gam, NormD, LowPass):
+def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass):
     '''Read the CMIP5 and CMIP6 global steric and ocean dynamics contribution
     and compute a probability distribution'''
     
     mip = misc.which_mip(SCE)
     nb_y2 = ye - ys +1
+    lat_N, lat_S, lon_W, lon_E = LOC
 
     if mip == 'cmip5':
         # Change the name of files to avoid this if
@@ -117,13 +116,6 @@ def odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E,
     zos_ds = misc.rotate_longitude(zos_ds, 'lon')
     
     full_st_da = xr.open_dataset(f'{DIR_CMIP}/{mip}_SeaLevel_{SCE}_zostoga_1986_2100.nc')
-    
-    # What was changed compared to knmi code above?
-    # latitude, longitude -> lat, lon
-    # Data already in cm
-    # Last year is 2099 instead of 2100 for KNMI14
-    # No need to remove reference period, already done
-    # In KNMI14 steric needs to be removed, here it needs to be added
     
     full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(time=slice(ref_steric[0],ye), 
                             lat=slice(lat_S,lat_N), 

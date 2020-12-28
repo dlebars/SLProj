@@ -1,5 +1,7 @@
 INFO = True
-LOC = True
+# Original box from Hylke: 51-60N, -3.5,7.5E
+LOC = [60, 51, -3.5, 7.5] # lat_N, lat_S, lon_W, lon_E
+LOC_FP = [53, 5] # lat, lon
 IBarE = False
 TEMPf = 'all'
 GRE = 'IPCC'

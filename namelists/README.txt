@@ -3,7 +3,10 @@
 #
 # Description of variables:
 # INFO: Set to true to get more info in output
-# LOC: If True, local otherwise global sea level projection
+# LOC: If local give the coordinates [lat_N, lat_S, lon_W, lon_E] used for ocean
+# dynamics averaging otherwise False for global sea level projections.
+# For local projections the fingerprint location is also used:
+# LOC_FP = [lat, lon] (Point where the fingerprints are read)
 # IBarE: If True, include the inverse barometer effect, only used for local 
 #        projections. But not necessary (generally small effect).
 # TEMPf: Chose which models to read GMST from. 
@@ -73,7 +76,8 @@
 ################################################################################
 Example of namelist file:
 INFO = True
-LOC = True
+LOC = [60, 51, -3.5, 7.5]
+LOC_FP = [53, 5]
 IBarE = False
 TEMPf = 'AR5'
 GRE = 'IPCC'

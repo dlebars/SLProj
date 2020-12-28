@@ -1,12 +1,10 @@
 INFO = True
-# Original box from Hylke: 51-60N, -3.5,7.5E
-LOC = [60, 51, -3.5, 7.5] # lat_N, lat_S, lon_W, lon_E
-LOC_FP = [53, 5] # lat, lon
+LOC = False
 IBarE = False
-TEMPf = 'AR5'
-GRE = 'KNMI14'
-ODYN = 'KNMI'
-ANT_DYN = 'KNMI14'
+TEMPf = 'all'
+GRE = 'IPCC'
+ODYN = 'CMIP5'
+ANT_DYN = 'IPCC'
 GAM = 1
 COMB = 'IPCC'
 SaveAllSamples = False

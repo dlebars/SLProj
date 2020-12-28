@@ -43,13 +43,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         DIR_IBE     = ROOT+'Data_AR5/InvertedBarometer/1x1_reg/'
         DIR_IBEmean = ROOT+'Data_AR5/InvertedBarometer/globalmeans_from_1x1_glob/'
 
-        # Box of interest, used for local computations:
-        # Original box from Hylke: 51-60N, -3.5,7.5E
-        lat_N, lat_S, lon_W, lon_E = 60, 51, -3.5, 7.5
-
-        # Point of interest (Netherlands), used for local computations:
-        lat_Neth = 53
-        lon_Neth = 5
         if nl.ODYN == 'KNMI':
             DIR_O       = ROOT + 'Data_AR5/Ocean/1x1_reg/'
             DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
@@ -144,7 +137,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Read fingerprint for Glaciers and Ice Caps
         f_gic = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', \
                                      decode_times=False)
-        F_gic = misc.finger1D(lat_Neth, lon_Neth, f_gic.latitude, f_gic.longitude, 
+        F_gic = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
         F_gic2[jfs:jfe+1] =  F_gic[ifs:ife+1]/100 # Convert from % to fraction
 
@@ -153,13 +146,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         f_ic        = xr.open_dataset(DIR_F+'Relative_icesheets_reg.nc')
         lat_ic      = f_ic.latitude #tofloat?
         lon_ic      = f_ic.longitude
-        F_gsmb      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_GRE)
+        F_gsmb      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_GRE)
         F_gsmb2[jfs:jfe+1]  =  F_gsmb/100
-        F_asmb      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.SMB_ANT)
+        F_asmb      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_ANT)
         F_asmb2[jfs:jfe+1]  =  F_asmb/100
-        F_gdyn      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_GRE)
+        F_gdyn      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_GRE)
         F_gdyn2[jfs:jfe+1]  =  F_gdyn/100
-        F_adyn      = misc.finger1D(lat_Neth, lon_Neth, lat_ic, lon_ic, f_ic.DYN_ANT)
+        F_adyn      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_ANT)
         F_adyn2[jfs:jfe+1]  =  F_adyn/100
 
         del(f_ic, lat_ic, lon_ic)
@@ -170,7 +163,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         lon_gw     = f_gw.longitude
         finger_gw  = f_gw.GROUND
         #finger_gw@_FillValue = 0
-        F_gw       = misc.finger1D(lat_Neth, lon_Neth, lat_gw, lon_gw, finger_gw)
+        F_gw       = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_gw, lon_gw, finger_gw)
         F_gw2[jfs:jfe+1]  =  F_gw[ifs:ife+1]/100
 
         del(f_gw)
@@ -315,12 +308,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, \
-                                     lat_S, lon_W, lon_E, ref_steric, ye, \
-                                     N, ys, nl.GAM, NormDT, nl.LowPass)
+                X_Of = odyn.odyn_loc(SCE, MOD, DIR_O, DIR_OG, nl.LOC, 
+                                     ref_steric, ye, N, ys, nl.GAM, NormDT, 
+                                     nl.LowPass)
             elif nl.ODYN == 'CMIP5':
-                X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E, 
-                                      ref_steric, ye, N, ys, nl.GAM, NormDT, nl.LowPass)
+                X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
+                                      ys, nl.GAM, NormDT, nl.LowPass)
         else:
             if nl.ODYN == 'KNMI':
                 # !!! Solve the start_date issue before use: Use ref_steric instead
@@ -328,9 +321,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                                       start_date, ye, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'IPCC':
                 X_Of = odyn.odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
+                
             elif ODYN == 'CMIP5':
-                X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
-            
+                X_Of = odyn.odyn_cmip(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
+
         X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)
         X_O_A_perc = X_O_A_perc + np.percentile(X_Of[2,:,:], Perc, axis=0)
         
