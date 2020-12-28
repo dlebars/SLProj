@@ -15,7 +15,7 @@ import func_gre as gre
 import func_ant as ant
 import func_B19 as b19
 
-def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
+def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """Compute future total sea level distribution.
                Calls external functions for each contribution.
                 List of processes considered:
@@ -65,11 +65,10 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers', \
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
                  'Greenland dynamics', 'sum anta.', 'Total']
-    # Percentiles to print at run time
-    Perc = [1,5,10,17,20,50,80,83,90,95,99,99.5,99.9]
     
-    # Percentiles to store in outputs
-    Perc_store = [1,5,17,50,83,95,99]
+    # Percentiles to print at run time and store in outputs
+    Perc = [1,5,10,17,20,50,80,83,90,95,99]
+    nb_perc = len(Perc)
     
     if nl.SaveAllSamples:
         if nl.LOC:  # Number of components, used to compute correlations efficently.
@@ -89,12 +88,6 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         "IPSL-CM5A-MR","MIROC5","MIROC-ESM-CHEM","MIROC-ESM","MPI-ESM-LR","MPI-ESM-MR",\
         "MRI-CGCM3","NorESM1-ME","NorESM1-M"]
     nb_MOD_AR5 = len(MOD)
-    
-    #For KNMI files the SSH has a different name for each scenario
-    if SCE  == 'rcp45':
-        SSH_VAR  = 'ZOSH45'
-    elif SCE == 'rcp85':
-        SSH_VAR  = "ZOS85"
     
     ### General parameters
     start_date = 1980    # Start reading data
@@ -118,10 +111,10 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     a1_lo_g           = 0.043
     
     #### Parameters to produce PDF
-    bin_min = -20. - RESOL/2
-    bin_max = 500. + RESOL/2
-    bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, RESOL)   
-    nbin = len(bin_centers)
+#     bin_min = -20. - RESOL/2
+#     bin_max = 500. + RESOL/2
+#     bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, RESOL)   
+#     nbin = len(bin_centers)
     
     ####
     TIME       = np.arange( start_date, ye + 1 )
@@ -251,17 +244,17 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     nb_it = 0
     END = False
     
-    X_O_G_pdf     = np.zeros([nb_y2,nbin])
-    X_O_A_pdf     = np.zeros([nb_y2,nbin])
-    X_B_pdf       = np.zeros([nb_y2,nbin])
-    X_gic_pdf     = np.zeros([nb_y2,nbin])
-    X_gsmb_pdf    = np.zeros([nb_y2,nbin])
-    X_asmb_pdf    = np.zeros([nb_y2,nbin])
-    X_landw_pdf   = np.zeros([nb_y2,nbin])
-    X_ant_pdf     = np.zeros([nb_y2,nbin])
-    X_gre_pdf     = np.zeros([nb_y2,nbin])
-    X_ant_tot_pdf = np.zeros([nb_y2,nbin])
-    X_tot_pdf     = np.zeros([nb_y2,nbin])
+    X_O_G_perc     = np.zeros([nb_perc,nb_y2])
+    X_O_A_perc     = np.zeros([nb_perc,nb_y2])
+    X_B_perc       = np.zeros([nb_perc,nb_y2])
+    X_gic_perc     = np.zeros([nb_perc,nb_y2])
+    X_gsmb_perc    = np.zeros([nb_perc,nb_y2])
+    X_asmb_perc    = np.zeros([nb_perc,nb_y2])
+    X_landw_perc   = np.zeros([nb_perc,nb_y2])
+    X_ant_perc     = np.zeros([nb_perc,nb_y2])
+    X_gre_perc     = np.zeros([nb_perc,nb_y2])
+    X_ant_tot_perc = np.zeros([nb_perc,nb_y2])
+    X_tot_perc     = np.zeros([nb_perc,nb_y2])
 
     if nl.SaveAllSamples:
         X_all       = np.zeros([nb_comp, N, nb_yd])
@@ -279,7 +272,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         comp  = 1    # Re-initialize the component count for the Corr case
 
         #### Set seeds for the random number generators
-        # Does not need to be necessary in Python -> Check
+        # Does not seem to be necessary in Python -> Check
 
         # Sample a normal distribution to use for temperature
         NormD  = np.random.normal(0, 1, N)
@@ -323,7 +316,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         if nl.LOC:
             if nl.ODYN == 'KNMI':
                 X_Of = odyn.odyn_loc(SCE, MOD, DIR_O, DIR_OG, lat_N, \
-                                     lat_S, lon_W, lon_E, ref_steric, ye, SSH_VAR, \
+                                     lat_S, lon_W, lon_E, ref_steric, ye, \
                                      N, ys, nl.GAM, NormDT, nl.LowPass)
             elif nl.ODYN == 'CMIP5':
                 X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, lat_N, lat_S, lon_W, lon_E, 
@@ -332,21 +325,15 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             if nl.ODYN == 'KNMI':
                 # !!! Solve the start_date issue before use: Use ref_steric instead
                 X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, \
-                                      start_date, ye, SSH_VAR, N, i_ys, nl.GAM, NormDT)
+                                      start_date, ye, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'IPCC':
                 X_Of = odyn.odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
             elif ODYN == 'CMIP5':
                 X_Of = odyn.odyn_cmip5(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
-
-        # Compute the pdfs based on the chosen periods
-        for t in range(0, nb_y2):
-            X_O_G_pdf[t,:] = X_O_G_pdf[t,:] + \
-            np.histogram(X_Of[1,:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
-            X_O_A_pdf[t,:] = X_O_A_pdf[t,:] + \
-            np.histogram(X_Of[2,:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
-
+            
+        X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)
+        X_O_A_perc = X_O_A_perc + np.percentile(X_Of[2,:,:], Perc, axis=0)
+        
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
             # Reorder contribution in ascending order
@@ -398,12 +385,8 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
         for t in range(0,nb_y2): # Use broadcasting?
             X_gic[:,t] = X_gic[:,t]*F_gic2[t]
-
-        # Compute the pdfs based on the chosen periods
-        for t in range(0,nb_y2):  # Use broadcasting?
-            X_gic_pdf[t,:]  = X_gic_pdf[t,:] + \
-            np.histogram(X_gic[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+            
+        X_gic_perc = X_gic_perc + np.percentile(X_gic, Perc, axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -454,12 +437,8 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
         for t in range(0, nb_y2):
             X_gsmb[:,t] = X_gsmb[:,t] * F_gsmb2[t]
-
-        # Compute the pdfs based on the chosen periods
-        for t in range(0, nb_y2):
-            X_gsmb_pdf[t, :]  = X_gsmb_pdf[t,:] + \
-            np.histogram(X_gsmb[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        
+        X_gsmb_perc = X_gsmb_perc + np.percentile(X_gsmb, Perc, axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -507,14 +486,9 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         for t in range(0, nb_y2):
             X_asmb[:,t] = X_asmb[:,t] * F_asmb2[t]
 
-        # Compute the pdfs for the the chosen periods
-        for t in range(0, nb_y2):
-            X_asmb_pdf[t,:]  = X_asmb_pdf[t,:] + \
-            np.histogram(X_asmb[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        X_asmb_perc = X_asmb_perc + np.percentile(X_asmb, Perc, axis=0)
     
         # Update X_tot, the sum of all contributions
-
         if nl.COMB == 'DEP':
             # Reorder contribution in ascending order
             X_asmb = np.sort(X_asmb, 0)
@@ -541,11 +515,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         for t in range(0,nb_y2):
             X_landw[:,t] = X_landw[:,t]*F_gw2[t]
 
-        # Compute the pdfs based on the chosen periods
-        for t in range(0,nb_y2):        # Loop on the period
-            X_landw_pdf[t,:]  = X_landw_pdf[t,:] + \
-            np.histogram(X_landw[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        X_landw_perc = X_landw_perc + np.percentile(X_landw, Perc, axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -617,11 +587,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         for t in range(0, nb_y2):
             X_ant[:,t] = X_ant[:,t]*F_adyn2[t]
 
-        # Compute the pdfs based on user defined periods of time
-        for t in range(0, nb_y2):
-            X_ant_pdf[t,:]  = X_ant_pdf[t,:] + \
-            np.histogram(X_ant[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        X_ant_perc = X_ant_perc + np.percentile(X_ant, Perc, axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -636,11 +602,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
             X_tot     = X_tot + X_ant
             X_ant_tot = X_ant_tot + X_ant
 
-          # Compute the pdfs based on user defined periods of time
-        for t in range(0, nb_y2):
-            X_ant_tot_pdf[t,:]  = X_ant_tot_pdf[t,:] + \
-            np.histogram(X_ant_tot[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        X_ant_tot_perc = X_ant_tot_perc + np.percentile(X_ant_tot, Perc, axis=0)
             
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_ant[:,ind_d]
@@ -685,11 +647,7 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         for t in range(0, nb_y2):
             X_gre[:,t] = X_gre[:,t]*F_gdyn2[t]
 
-        # Compute the pdfs based on the chosen periods
-        for t in range(0, nb_y2):
-            X_gre_pdf[t,:]  = X_gre_pdf[t,] + \
-            np.histogram(X_gre[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        X_gre_perc = X_gre_perc + np.percentile(X_gre, Perc, axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -714,21 +672,18 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         # Tot = Thermal exp. and ocean dyn. + Glaciers and ice sheets + Greenland SMB +
         #       Antractic SMB + land water + antarctic dynamic + greenland dynamics
 
-        # Compute the pdfs based on the chosen periods
-        for t in range(0, nb_y2):
-            X_tot_pdf[t,:]  = X_tot_pdf[t,:] + \
-            np.histogram(X_tot[:,t], bins=nbin, range=(bin_min, bin_max), \
-                         density=True)[0]
+        X_tot_perc = X_tot_perc + np.percentile(X_tot, Perc, axis=0)
 
         # Check the convergence
-        X_tot_pdf_i = X_tot_pdf/nb_it
-        PDF_cum     = X_tot_pdf_i[-1,:].cumsum()*100*(bin_centers[1] - bin_centers[0])
-        indi        = np.abs(PDF_cum - 99.9).argmin()
-        CONV.append(bin_centers[indi])
-        print('99.9 percentile: ' + str(CONV[-1]))
-        del(indi)
-        del(PDF_cum)
-        del(X_tot_pdf_i)
+        X_tot_perc_i = X_tot_perc/nb_it
+        
+        print('All precentiles:')
+        print('Perc:')
+        print(X_tot_perc_i[:,-1])
+        
+        CONV.append(X_tot_perc_i[-1,-1])
+        print(f'{Perc[-1]} percentile: ' + str(CONV[-1]))
+        del(X_tot_perc_i)
 
         if len(CONV) >= 4:
             dc1 = abs(CONV[-1]-CONV[-2])
@@ -756,18 +711,19 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         print(X_tot_sel.shape)
         if nl.Decomp:
             print('Decomp is on')
-            for t in range(0, nb_yd):
-                for bi in range(0, nbin): #!!! use "&"" the element wise "and"
-                    ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi*RESOL) &
-                                        (X_tot_sel[:,t] <= bin_min+(bi+1)*RESOL) )[0]
+            print('Not yet implemented')
+#             for t in range(0, nb_yd):
+#                 for bi in range(0, nbin): #!!! use "&"" the element wise "and"
+#                     ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi*RESOL) &
+#                                         (X_tot_sel[:,t] <= bin_min+(bi+1)*RESOL) )[0]
         
-                    if len(ind_bin) > 1:
-                        X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
-                        X_all[1:,ind_bin,t].mean(axis=1)
-                    else:
-                        X_Decomp[:,t,bi] = 0
+#                     if len(ind_bin) > 1:
+#                         X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
+#                         X_all[1:,ind_bin,t].mean(axis=1)
+#                     else:
+#                         X_Decomp[:,t,bi] = 0
                         
-                    del(ind_bin)
+#                     del(ind_bin)
 
         del(X_tot)
         print('Finished iteration ' + str(nb_it))
@@ -775,18 +731,18 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
         #END = True # Just for testing
         ##### End of main loop
     
-    # Scale PDFs and correlation matrices with number of iterations:
-    X_O_G_pdf     = X_O_G_pdf/nb_it
-    X_O_A_pdf     = X_O_A_pdf/nb_it
-    X_B_pdf       = X_B_pdf/nb_it
-    X_gic_pdf     = X_gic_pdf/nb_it
-    X_gsmb_pdf    = X_gsmb_pdf/nb_it
-    X_asmb_pdf    = X_asmb_pdf/nb_it
-    X_landw_pdf   = X_landw_pdf/nb_it
-    X_ant_pdf     = X_ant_pdf/nb_it
-    X_gre_pdf     = X_gre_pdf/nb_it
-    X_ant_tot_pdf = X_ant_tot_pdf/nb_it
-    X_tot_pdf     = X_tot_pdf/nb_it
+    # Scale percentiles and correlation matrices with number of iterations:
+    X_O_G_perc     = X_O_G_perc/nb_it
+    X_O_A_perc     = X_O_A_perc/nb_it
+    X_B_perc       = X_B_perc/nb_it
+    X_gic_perc     = X_gic_perc/nb_it
+    X_gsmb_perc    = X_gsmb_perc/nb_it
+    X_asmb_perc    = X_asmb_perc/nb_it
+    X_landw_perc   = X_landw_perc/nb_it
+    X_ant_perc     = X_ant_perc/nb_it
+    X_gre_perc     = X_gre_perc/nb_it
+    X_ant_tot_perc = X_ant_tot_perc/nb_it
+    X_tot_perc     = X_tot_perc/nb_it
     if nl.Corr:
         M_Corr_P      = M_Corr_P/nb_it
         M_Corr_S      = M_Corr_S/nb_it
@@ -795,74 +751,45 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
 
     print('### Numbers for the total distribution ###')
     print('### Scenario " + SCE + " ###')
-    p     = misc.perc_df(X_tot_pdf[-1,:], Perc, bin_centers)
-    print(p)
+    print(X_tot_perc[:,-1])
     
     if nl.Corr:
         print('### Spearman correlations ###')
         print(M_Corr_S[-1,:])
     
     ############################################################################
-    # Output the results:
+    print("### Export data to a NetCDF file ##################################")
+
+    perc_ar = np.array([X_O_G_perc, X_O_A_perc, X_B_perc, X_gic_perc, X_gsmb_perc, 
+                        X_asmb_perc, X_landw_perc, X_ant_perc, X_gre_perc, 
+                        X_ant_tot_perc, X_tot_perc])
     
-    nb_proc = 9+2     # 9 different processes plus total antarctic and total
-
-    MAT_OUTd         = np.zeros([nb_y2, nb_proc, nbin])
-    MAT_OUTd[:,0,:]  = X_O_G_pdf
-    MAT_OUTd[:,1,:]  = X_O_A_pdf
-    MAT_OUTd[:,2,:]  = X_B_pdf
-    MAT_OUTd[:,3,:]  = X_gic_pdf
-    MAT_OUTd[:,4,:]  = X_gsmb_pdf
-    MAT_OUTd[:,5,:]  = X_asmb_pdf
-    MAT_OUTd[:,6,:]  = X_landw_pdf
-    MAT_OUTd[:,7,:]  = X_ant_pdf
-    MAT_OUTd[:,8,:]  = X_gre_pdf
-    MAT_OUTd[:,9,:]  = X_ant_tot_pdf
-    MAT_OUTd[:,10,:] = X_tot_pdf
-
-    proc_coord = np.arange(nb_proc) # Can we have names here?
-    MAT_OUT = xr.DataArray(MAT_OUTd, coords=[TIME2, ProcessNames, bin_centers] , 
-                           dims=['time', 'proc', 'bins'])
-
-    MAT_OUT.attrs['units'] = 'cm'
-    MAT_OUT.attrs['long_name'] = 'Contains the pdfs of each sea ' + \
-    'level contributor and of the total sea level.'
-
-    # Compute time series of a few percentiles to export
-    perc_2d_ar = np.zeros([nb_y2, nb_proc, len(Perc_store)])
-    for i in range(nb_proc):
-        perc_2d_ar[:,i,:] = np.array( \
-            misc.perc_df_2d(MAT_OUTd[:,i,:], Perc_store, bin_centers, TIME2))
-    
-    perc_2d_da = xr.DataArray(perc_2d_ar, coords=[TIME2, ProcessNames, Perc_store], \
-                           dims=['time', 'proc', 'percentiles'])
-    perc_2d_da.attrs['units'] = 'cm'
-    perc_2d_da.attrs['long_name'] = 'Selection of time series for a few ' + \
-    'percentiles. Other quantiles can be computed from the pdfs data (MAT_RES).'
+    perc_da = xr.DataArray(perc_ar, coords=[ProcessNames, Perc, TIME2], \
+                           dims=['proc', 'percentiles', 'time'])
+    perc_da.attrs['units'] = 'cm'
+    perc_da.attrs['long_name'] = 'Time series of percentiles.'
     
     if nl.Corr:
         print('Output for option np.Corr = '+ str(nl.Corr) +' is not supported yet')
     
-    print("### Export data to a NetCDF file ##################################")
-    
-    # Build a DataSet
-    MAT_OUT_ds = xr.Dataset({'MAT_RES': MAT_OUT, 'Perc_ts' : perc_2d_da})
+    OUT_ds = xr.Dataset({'perc_ts' : perc_da})
     
     if nl.Corr:
         print('Not yet implemented')
         # Write PearsonCor and SpearmanCor out (MAT_OUTc2, MAT_OUTc2)
         # proc2 coordinate name
     if nl.Decomp:
-        X_Decomp_da = xr.DataArray(X_Decomp, 
-                                   coords=[NameComponents[1:], TIME2[ind_d], bin_centers], 
-                                   dims=['proc3', 'time_s', 'bins'])
-        X_Decomp_da.attrs['long_name'] = ('Provides the average decomposition '+
-                                          'of total sea level into its individual '+ 
-                                          'components')
-        MAT_OUT_ds['decomp'] = X_Decomp_da
+        print('Not yet implemented')
+#         X_Decomp_da = xr.DataArray(X_Decomp, 
+#                                    coords=[NameComponents[1:], TIME2[ind_d], bin_centers], 
+#                                    dims=['proc3', 'time_s', 'bins'])
+#         X_Decomp_da.attrs['long_name'] = ('Provides the average decomposition '+
+#                                           'of total sea level into its individual '+ 
+#                                           'components')
+#         OUT_ds['decomp'] = X_Decomp_da
 
     
-    MAT_OUT_ds.attrs['options'] = \
+    OUT_ds.attrs['options'] = \
     "Computations were done with the following options:: " + \
     "Local computations?" + str(nl.LOC) + \
     ", include Inverse Barometer effect: "+ str(nl.IBarE) + \
@@ -882,14 +809,14 @@ def main(VER, N, MIN_IT, er, RESOL, namelist_name, SCE):
     ", remove greenland uncertainty: "+ str(nl.NoU_G) + \
     ", remove Antarctic uncertainty: "+ str(nl.NoU_A) + \
     ", remove glaciers and ice caps uncertainty: "+ str(nl.NoU_Gl) + \
-    ", decompose the total sea level into its contributors: "+ str(nl.Decomp)
+    ", decompose the total sea level into its contributors: "+ str(nl.Decomp) + \
+    ", filter stero-dynamics and GMST with a polynomial fit: "+ str(nl.LowPass)
     
-    MAT_OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
+    OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
     'Probabilistic Sea Level Projection code version ' + str(VER)
+    OUT_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
+    NameOutput= DIR_OUT + 'SeaLevelPerc_' + namelist_name + '_' + SCE + '.nc'
     
-    MAT_OUT_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
-    
-    NameOutput= DIR_OUT + 'SeaLevelPDF_' + namelist_name + '_' + SCE + '.nc'
     if os.path.isfile(NameOutput):
         os.remove(NameOutput)
-    MAT_OUT_ds.to_netcdf(NameOutput) #mode='a' to append or overwrite
+    OUT_ds.to_netcdf(NameOutput) #mode='a' to append or overwrite
