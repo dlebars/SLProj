@@ -316,14 +316,14 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                                       ys, nl.GAM, NormDT, nl.LowPass)
         else:
             if nl.ODYN == 'KNMI':
-                # !!! Solve the start_date issue before use: Use ref_steric instead
-                X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG, \
+                X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG,
                                       start_date, ye, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'IPCC':
                 X_Of = odyn.odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
                 
-            elif ODYN == 'CMIP5':
-                X_Of = odyn.odyn_cmip(SCE, LOC, DIR_OCMIP5, N, ys, ye, nl.GAM, NormDT)
+            elif nl.ODYN == 'CMIP5':
+                X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
+                                      ys, nl.GAM, NormDT, nl.LowPass)
 
         X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)
         X_O_A_perc = X_O_A_perc + np.percentile(X_Of[2,:,:], Perc, axis=0)
