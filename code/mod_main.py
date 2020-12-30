@@ -258,7 +258,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         M_Corr_S    = np.zeros([nb_yd,nb_el])  # Rank correlation matrice
 
     if nl.Decomp:
-        X_Decomp = np.zeros([nb_comp-1,nb_yd,nbin])
+        X_Decomp = np.zeros([nb_comp-1,nb_perc,nb_yd])
     
     while not END:
         nb_it = nb_it + 1
@@ -668,23 +668,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         X_tot_perc = X_tot_perc + np.percentile(X_tot, Perc, axis=0)
 
-        # Check the convergence
-        X_tot_perc_i = X_tot_perc/nb_it
-        
-        print('All precentiles:')
-        print('Perc:')
-        print(X_tot_perc_i[:,-1])
-        
-        CONV.append(X_tot_perc_i[-1,-1])
-        print(f'{Perc[-1]} percentile: ' + str(CONV[-1]))
-        del(X_tot_perc_i)
-
-        if len(CONV) >= 4:
-            dc1 = abs(CONV[-1]-CONV[-2])
-            dc2 = abs(CONV[-2]-CONV[-3])
-            dc3 = abs(CONV[-3]-CONV[-4])
-            if (dc1 <= er) and (dc2 <= er) and (dc3 <= er) and (MIN_IT <= nb_it):
-                END = True
+        X_tot_perc_i = X_tot_perc/nb_it        
 
         # Compute the correlations (X_all: nb_comp,nb_SCE,N,nb_yd)
         # (M_Corr_x: nb_SCE,nb_yd,nb_el)
@@ -701,23 +685,42 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                         stats.spearmanr(X_all[i,:,t], X_all[j,:,t])
                         pl = pl+1
 
-        X_tot_sel = X_tot[:,ind_d]
-        print(X_tot_sel.shape)
         if nl.Decomp:
             print('Decomp is on')
-            print('Not yet implemented')
-#             for t in range(0, nb_yd):
-#                 for bi in range(0, nbin): #!!! use "&"" the element wise "and"
-#                     ind_bin  = np.where( (X_tot_sel[:,t] > bin_min+bi*RESOL) &
-#                                         (X_tot_sel[:,t] <= bin_min+(bi+1)*RESOL) )[0]
+            accuracy = 0.1
+            print(f'accuracy is {accuracy} cm')
+            X_tot_sel = X_tot[:,ind_d]
+            X_tot_perc_i_sel = X_tot_perc_i[:,ind_d]
+            print(X_tot_sel.shape)
+
+            for t in range(nb_yd):
+                for perc in range(nb_perc):                    
+                    ind_perc  = np.where( 
+                        (X_tot_sel[:,t] > (X_tot_perc_i_sel[perc,t]-accuracy/2)) & 
+                        (X_tot_sel[:,t] <= (X_tot_perc_i_sel[perc,t]+accuracy/2)) )[0]
+
+                    if len(ind_perc) > 1:
+                        X_Decomp[:,perc,t] = (X_Decomp[:,perc,t] + 
+                                              X_all[1:,ind_perc,t].mean(axis=1))
+                    else:
+                        print('WARNING: X_Decomp does not have enough samples')
+
+        # Check the convergence
+        print('All precentiles:')
+        print('Perc:')
+        print(X_tot_perc_i[:,-1])
         
-#                     if len(ind_bin) > 1:
-#                         X_Decomp[:,t,bi] =  X_Decomp[:,t,bi] + \
-#                         X_all[1:,ind_bin,t].mean(axis=1)
-#                     else:
-#                         X_Decomp[:,t,bi] = 0
-                        
-#                     del(ind_bin)
+        CONV.append(X_tot_perc_i[-1,-1])
+        print(f'{Perc[-1]} percentile: ' + str(CONV[-1]))
+        del(X_tot_perc_i)
+
+        if len(CONV) >= 4:
+            dc1 = abs(CONV[-1]-CONV[-2])
+            dc2 = abs(CONV[-2]-CONV[-3])
+            dc3 = abs(CONV[-3]-CONV[-4])
+            if (dc1 <= er) and (dc2 <= er) and (dc3 <= er) and (MIN_IT <= nb_it):
+                END = True
+
 
         del(X_tot)
         print('Finished iteration ' + str(nb_it))
@@ -773,15 +776,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Write PearsonCor and SpearmanCor out (MAT_OUTc2, MAT_OUTc2)
         # proc2 coordinate name
     if nl.Decomp:
-        print('Not yet implemented')
-#         X_Decomp_da = xr.DataArray(X_Decomp, 
-#                                    coords=[NameComponents[1:], TIME2[ind_d], bin_centers], 
-#                                    dims=['proc3', 'time_s', 'bins'])
-#         X_Decomp_da.attrs['long_name'] = ('Provides the average decomposition '+
-#                                           'of total sea level into its individual '+ 
-#                                           'components')
-#         OUT_ds['decomp'] = X_Decomp_da
-
+        X_Decomp_da = xr.DataArray(X_Decomp, 
+                                   coords=[NameComponents[1:], Perc, TIME2[ind_d]], 
+                                   dims=['proc_s', 'percentiles', 'time_s'])
+        X_Decomp_da.attrs['long_name'] = ('Provides the average decomposition '+
+                                          'of total sea level into its individual '+ 
+                                          'components')
+        OUT_ds['decomp'] = X_Decomp_da
     
     OUT_ds.attrs['options'] = \
     "Computations were done with the following options:: " + \
