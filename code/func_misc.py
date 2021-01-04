@@ -22,7 +22,7 @@ def temp_path_AR5(MOD, DIR_T, SCE):
             files.append(file_sel[0])
     return files
 
-def tglob_cmip5( files, SCE, start_date, ye, INFO):
+def tglob_cmip5( files, SCE, start_date, ye, LowPass, INFO):
     '''Read the text files of monthly temperature for each CMIP5 model and store
     yearly averged values in and array.
     Output data is in degree Kelvin'''
@@ -53,6 +53,12 @@ def tglob_cmip5( files, SCE, start_date, ye, INFO):
     TGLOB = TGLOB.rename({'Year':'time'})
     TGLOB = TGLOB.sel(time=slice(start_date,ye))
 
+    if LowPass:
+        new_time = xr.DataArray( np.arange(start_date,ye+1), dims='time', 
+                coords=[np.arange(start_date,ye+1)], name='time' )
+        fit_coeff = TGLOB.polyfit('time', 2)
+        TGLOB = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients) 
+    
     return TGLOB
 
 def normal_distrib(model_ts, GAM, NormD):

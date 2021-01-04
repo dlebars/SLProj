@@ -86,7 +86,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     start_date = 1980    # Start reading data
     ys = 2006   # Starting point for the integration, if this is changed 
                 # then expect problems in functions
-    ye = 2100   # end year for computation
+    ye = 2100   # end year for computation. 2100, 2125
 
     nb_y = ye-start_date+1       # Period where data needs to be read
     nb_y2 = ye - ys +1           # Period of integration of the model
@@ -215,7 +215,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     else:
         print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
     
-    TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.INFO)
+    TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.LowPass, nl.INFO)
     TGLOBs = TGLOB.sel(time=slice(ys,None))
 
     # Compute the temperature anomalies for each process using a different 
@@ -560,7 +560,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             
         elif nl.ANT_DYN == 'LEV14':
             UnifDd = np.random.uniform(0, 1, N)
-            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, GAM, NormD, UnifDd, DIR_T, files, 'LARMIP')
+            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, nl.GAM, NormD, UnifDd, ROOT, 
+                                        files, 'LARMIP', nl.LowPass)
             
         elif nl.ANT_DYN == 'SROCC':
             X_ant = ant.ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME2, N)

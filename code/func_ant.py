@@ -125,6 +125,7 @@ def read_larmip_coeff(data_dir):
     '''Read the coefficient scalling GMST to temperature around Antarctica'''
     
     f = xr.open_dataset(f'{data_dir}LFR_Lev14/RFunctions.nc', decode_times=False)
+    
     return f.coeff
 
 
@@ -135,7 +136,8 @@ def read_larmip2_lrf(data_dir):
     
     return RF
 
-def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_files, larmip_v):
+def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, 
+                   temp_files, larmip_v, LowPass):
     '''Compute the antarctic dynamics contribution to global sea level as in 
     Levermann et al 2014, using linear response functions.'''
 
@@ -152,8 +154,6 @@ def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_fil
     nb_y = ye - start_date + 1
     TIME = np.arange(start_date,ye+1)
     i_ys = np.where(TIME == start_date2)[0][0]
-    i_ysr_Lev = np.where(TIME == 1861 )[0][0]  # Reference time 1860 to 1880
-    i_yer_Lev = np.where(TIME == 1880)[0][0]
     
     if larmip_v == 'LARMIP':
         RF = read_larmip_lrf(data_dir)
@@ -166,10 +166,94 @@ def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, temp_fil
 
     nb_bass = len(RF.bass)
 
-    TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, False)
-    Tref_Lev = misc.Tref(1961, 1980, TGLOB, TIME)
-    # Build the distribution of global temperature for this process
-    Td_Lev = misc.TempDist(TGLOB, Tref_Lev, GAM, NormD)
+    TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, LowPass, False)    
+    TGLOBs = TGLOB.sel(time=slice(start_date,None))
+    Tref_Lev = TGLOBs - TGLOB.sel(time=slice(start_date,1880)).mean(dim='time')
+    Td_Lev = misc.normal_distrib(Tref_Lev, GAM, NormD)
+
+    # Random model number: 1-19
+    RMod = np.random.randint(0, 19, N) # Select random model indice (0 to 18)
+    AlpCoeff = coeff[:,RMod,0] # dim: bassin, N
+    del(RMod)   
+        
+    # Use following line if Beta should have some external dependence
+    #  Beta = Beta_low + UnifDd*(Beta_high - Beta_low) # Modify to obtain random_uniform(7,16,N)
+    Beta = np.random.uniform(Beta_low, Beta_high, N)
+
+    BMelt = np.zeros([nb_bass, N, nb_y])
+    for b in range(nb_bass):
+        for t in range(nb_y):
+            BMelt[b,:,t] = AlpCoeff[b,:]*Td_Lev[:,t]*Beta
+    
+    del(AlpCoeff)
+    del(Td_Lev)
+    del(Beta)
+    
+    if model_corr:
+        Rdist = np.zeros([N], dtype=int)
+        Rdist = 2
+        Rdist = np.where(UnifDd >= 0.33, 1, Rdist)
+        Rdist = np.where(UnifDd >= 0.67, 0, Rdist)
+        modelsel = Rdist # Select model
+    else:
+        modelsel = np.random.randint(0, nbLRF, N) # Select models
+
+    RF = RF.transpose('bass', 'model', 'time')
+    RF = RF[:,modelsel,::-1]
+    
+    del(modelsel)
+
+    X_ant_b = np.zeros([nb_bass, N, nb_y])
+    for t in range(nb_y):
+        X_ant_b[:,:,t] = np.sum(RF[:,:,-1-t:]*BMelt[:,:,:t+1],2)
+
+    del(RF)
+    del(BMelt)
+
+    X_ant_b = X_ant_b*100 # Convert from m to cm
+    X_ant = np.sum(X_ant_b, 0) # Sum 4 bassins
+
+    # Remove the uncertainty at the beginning of the projection
+    ref = X_ant[:,i_ys-1]
+    for t in range(nb_y):
+        X_ant[:,t] = X_ant[:,t] - ref
+
+    return X_ant[:,i_ys:]
+
+def ant_dyn_larmip_t(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, 
+                   temp_files, larmip_v, LowPass):
+    '''Compute the antarctic dynamics contribution to global sea level as in 
+    Levermann et al 2014, using linear response functions.'''
+
+    model_corr = False # Introduces a correlation between input distribution 
+                       # UnifDd and the LRF model. Only implemented for the 
+                       # three LARMIP ice sheet models with ice shelves
+
+    nb_MOD = len(MOD)
+    N = len(NormD)
+    ye = 2100
+    start_date = 1861 # This is different from other runs
+    Beta_low = 7 # Bounds to use for the basal melt rate,
+    Beta_high = 16 # units are m.a^(-1).K^(-1)
+    nb_y = ye - start_date + 1
+    TIME = np.arange(start_date,ye+1)
+    i_ys = np.where(TIME == start_date2)[0][0]
+    
+    if larmip_v == 'LARMIP':
+        RF = read_larmip_lrf(data_dir)
+        coeff = read_larmip_coeff(data_dir)
+        nbLRF = 3 # Number of LRF to use. 3 or 5 for LARMIP
+    elif larmip_v == 'LARMIP2':
+        print('To do')
+    else:
+        print(f'ERROR: {larmip_v} value of larmip_v not implemented')
+
+    nb_bass = len(RF.bass)
+
+    TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, LowPass, False)    
+    TGLOBs = TGLOB.sel(time=slice(start_date,None))
+    Tref_Lev = TGLOBs - TGLOB.sel(time=slice(start_date,1880)).mean(dim='time')
+    Td_Lev = misc.normal_distrib(Tref_Lev, GAM, NormD)
 
     # Random model number: 1-19
     RMod = np.random.randint(0, 19, N) # Select random model indice (0 to 18)
