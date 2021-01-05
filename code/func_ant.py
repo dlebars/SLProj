@@ -2,11 +2,13 @@
 # func_ant.py: Defines functions to return probabilistic Antarctic contribution 
 #             to sea level
 ################################################################################
+import glob
+
 import numpy as np
 from scipy.stats import norm
 import xarray as xr
-
 from scipy import signal
+import pandas as pd
 
 import func_misc as misc
 
@@ -108,7 +110,7 @@ def ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME_loc, N):
 def read_larmip_lrf(data_dir):
     '''Read LARMIP Linear Response Functions'''
     
-    f = xr.open_dataset(f'{data_dir}LFR_Lev14/RFunctions.nc', decode_times=False)
+    f = xr.open_dataset(f'{data_dir}LRF_Lev14/RFunctions.nc', decode_times=False)
     ic_models = ['AIF', 'PS', 'PISM', 'SICO', 'UMISM']
 
     for icm in ic_models:
@@ -120,25 +122,64 @@ def read_larmip_lrf(data_dir):
             RF = RF_tmp
 
     RF.name = 'RF'
+    RF = RF.rename({'bass': 'region'})
+    RF = RF.assign_coords(region = (['Amundsen', 'Ross', 'Weddell', 'EAIS']))
+    RF = RF.transpose('region', 'model', 'time')
     
     return RF
 
 def read_larmip_coeff(data_dir):
     '''Read the coefficient scalling GMST to temperature around Antarctica'''
     
-    f = xr.open_dataset(f'{data_dir}LFR_Lev14/RFunctions.nc', decode_times=False)
+    coeff = xr.open_dataset(f'{data_dir}LRF_Lev14/RFunctions.nc', decode_times=False).coeff
     
-    return f.coeff
+    coeff = coeff.assign_coords(model = ([
+        "ACCESS1-0", "ACCESS1-3", "BNU-ESM", "CanESM2", "CCSM4", "CESM1-BGC", 
+        "CESM1-CAM5", "CSIRO-Mk3-6-0", "FGOALS-s2", "GFDL-CM3", "HadGEM2-ES", 
+        "INMCM4", "IPSL-CM5A-MR", "MIROC-ESM-CHEM", "MIROC-ESM", "MPI-ESM-LR", 
+        "MRI-CGCM3", "NorESM1-M", "NorESM1-ME"]))
+    
+    coeff = coeff.rename({'bass': 'region'})
+    coeff = coeff.assign_coords(region = (['Amundsen', 'Ross', 'Weddell', 'EAIS']))
+    coeff = coeff.assign_coords(result = (['NoDelay', 'Rsquared', 'Delay', 'WithDelay', 'Rsquared']))
+    
+    return coeff
 
 
-def read_larmip2_lrf(data_dir):
-    '''Read LAMIP 2 Linear Response Functions downloaded from:
-    https://github.com/ALevermann/Larmip2019'''
+def read_larmip2_lrf(data_dir, basal_melt):
+    '''Read LARMIP2 Linear Response Functions downloaded from:
+    https://github.com/ALevermann/Larmip2019.
+    Basal melt is in m.y-1. BM02, BM04, BM08, BM16 are available. 
+    basal_melt = BM08 is used in Levermann et al. 2020.'''
     
-    
-    return RF
+    reg_names = {'R1':'EAIS', 'R2':'Ross', 'R3':'Amundsen', 
+                 'R4':'Weddell', 'R5':'Peninsula'}
 
-def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir, 
+    for idb, reg in enumerate(reg_names):
+        path = f'{data_dir}LRF_Lev20/RFunctions/RF_*_{basal_melt}_{reg}.dat'
+        files = glob.glob(path)
+
+        for idf, f in enumerate(files):
+            ds = pd.read_csv(f, names=['RF']).to_xarray()
+            ds = ds.expand_dims({'model': [f[77:-12]]})
+            
+            if idf ==0:
+                ds2 = ds
+            else:
+                ds2 = xr.concat([ds2, ds], dim='model')
+
+        ds2 = ds2.expand_dims({'region': [reg_names[reg]]})
+        if idb == 0:
+            RF = ds2
+        else:
+            RF = xr.concat([RF, ds2], dim='region')
+
+    RF = RF.rename({'index' : 'time'})
+    RF = RF.transpose('region', 'model', 'time')
+    
+    return RF.RF
+
+def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir, 
                    temp_files, larmip_v, LowPass):
     '''Compute the antarctic dynamics contribution to global sea level as in 
     Levermann et al 2014, using linear response functions.'''
@@ -149,47 +190,52 @@ def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir,
 
     nb_MOD = len(MOD)
     N = len(NormD)
-    ye = 2100
     start_date = 1861 # This is different from other runs
     Beta_low = 7 # Bounds to use for the basal melt rate,
     Beta_high = 16 # units are m.a^(-1).K^(-1)
     nb_y = ye - start_date + 1
     TIME = np.arange(start_date,ye+1)
     i_ys = np.where(TIME == start_date2)[0][0]
+    # TODO change the way this time reference is handled
+    i_ys_ref = np.where(TIME == 1995)[0][0]
     
     if larmip_v == 'LARMIP':
         RF = read_larmip_lrf(data_dir)
-        coeff = read_larmip_coeff(data_dir)
         nbLRF = 3 # Number of LRF to use. 3 or 5 for LARMIP
+        coeff = read_larmip_coeff(data_dir).values
     elif larmip_v == 'LARMIP2':
-        print('To do')
+        RF = read_larmip2_lrf(data_dir, 'BM08')
+        # Exclude a model? There are two BISI_LBL...
+        nbLRF = len(RF.model)
+        coeff = read_larmip_coeff(data_dir)
+        # The coefficents need to be reordered to fit the RF
+        coeff = xr.concat([coeff.sel(region='EAIS'), 
+                    coeff.sel(region='Ross'),
+                    coeff.sel(region='Amundsen'),
+                    coeff.sel(region='Weddell'),
+                    coeff.sel(region='Amundsen').assign_coords(
+                        region = 'Peninsula')], dim='region')
+        coeff = coeff.values
+        
     else:
         print(f'ERROR: {larmip_v} value of larmip_v not implemented')
-
-    nb_bass = len(RF.bass)
+        
+    nb_bass = len(RF.region)
 
     TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, LowPass, False)    
     TGLOBs = TGLOB.sel(time=slice(start_date,None))
-    Tref_Lev = TGLOBs - TGLOB.sel(time=slice(start_date,1880)).mean(dim='time')
+    Tref_Lev = TGLOBs - TGLOB.sel(time=slice(start_date,start_date+19)).mean(dim='time')
     Td_Lev = misc.normal_distrib(Tref_Lev, GAM, NormD)
 
-    # Random model number: 1-19
+    # Random climate model number: 1-19
     RMod = np.random.randint(0, 19, N) # Select random model indice (0 to 18)
-    AlpCoeff = coeff[:,RMod,0] # dim: bassin, N
-    del(RMod)   
+    AlpCoeff = coeff[:,RMod,0] # dim: region, N
+    # 0 means no time delay between atmospheric and oceanic temperature
         
     # Use following line if Beta should have some external dependence
     #  Beta = Beta_low + UnifDd*(Beta_high - Beta_low) # Modify to obtain random_uniform(7,16,N)
     Beta = np.random.uniform(Beta_low, Beta_high, N)
-
-    BMelt = np.zeros([nb_bass, N, nb_y])
-    for b in range(nb_bass):
-        for t in range(nb_y):
-            BMelt[b,:,t] = AlpCoeff[b,:]*Td_Lev[:,t]*Beta
-    
-    del(AlpCoeff)
-    del(Td_Lev)
-    del(Beta)
+    BMelt = AlpCoeff[:,:,np.newaxis] * Td_Lev[np.newaxis,:,:] * Beta[np.newaxis,:,np.newaxis]
     
     if model_corr:
         Rdist = np.zeros([N], dtype=int)
@@ -200,21 +246,14 @@ def ant_dyn_larmip(SCE, MOD, start_date2, GAM, NormD, UnifDd, data_dir,
     else:
         modelsel = np.random.randint(0, nbLRF, N) # Select models
 
-    RF = RF.transpose('bass', 'model', 'time')
     RF = RF[:,modelsel,:]
-    del(modelsel)
 
-    X_ant_b = signal.fftconvolve(RF[:,:,:t+1],BMelt[:,:,:t+1], mode='full', axes=2)[:,:,:nb_y]
-
-    del(RF)
-    del(BMelt)
+    X_ant_b = signal.fftconvolve(RF[:,:,:nb_y],BMelt, mode='full', axes=2)[:,:,:nb_y]
 
     X_ant_b = X_ant_b*100 # Convert from m to cm
     X_ant = np.sum(X_ant_b, 0) # Sum 4 bassins
 
     # Remove the uncertainty at the beginning of the projection
-    ref = X_ant[:,i_ys-1]
-    for t in range(nb_y):
-        X_ant[:,t] = X_ant[:,t] - ref
-
+    X_ant -= X_ant[:,[i_ys_ref]]
+    
     return X_ant[:,i_ys:]

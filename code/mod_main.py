@@ -86,7 +86,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     start_date = 1980    # Start reading data
     ys = 2006   # Starting point for the integration, if this is changed 
                 # then expect problems in functions
-    ye = 2100   # end year for computation. 2100, 2125
+    ye = 2125   # end year for computation. 2100, 2125
 
     nb_y = ye-start_date+1       # Period where data needs to be read
     nb_y2 = ye - ys +1           # Period of integration of the model
@@ -102,12 +102,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     ## Initial Greenland dynamics contribution
     a1_up_g           = 0.076    # Unit is cm/y, equal to observations in 2006
     a1_lo_g           = 0.043
-    
-    #### Parameters to produce PDF
-#     bin_min = -20. - RESOL/2
-#     bin_max = 500. + RESOL/2
-#     bin_centers = np.arange(bin_min + RESOL/2, bin_max - RESOL/2 + RESOL, RESOL)   
-#     nbin = len(bin_centers)
     
     ####
     TIME       = np.arange( start_date, ye + 1 )
@@ -459,7 +453,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             # Redefine NormD to loose correlation
             NormD  = np.random.normal(0, 1, N)
 
-        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'SROCC']:
+        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'LEV20', 'SROCC']:
             # Build the distribution of global temperature for this contributor
             Td_a = misc.normal_distrib(T_a, nl.GAM, NormD)
 
@@ -560,8 +554,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             
         elif nl.ANT_DYN == 'LEV14':
             UnifDd = np.random.uniform(0, 1, N)
-            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, nl.GAM, NormD, UnifDd, ROOT, 
+            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
                                         files, 'LARMIP', nl.LowPass)
+        elif nl.ANT_DYN == 'LEV20':
+            UnifDd = np.random.uniform(0, 1, N)
+            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
+                                        files, 'LARMIP2', nl.LowPass)
             
         elif nl.ANT_DYN == 'SROCC':
             X_ant = ant.ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME2, N)
