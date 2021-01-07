@@ -21,6 +21,6 @@ namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
 # 'AR5_glo', 'CMIP5_glo', 'loc_TempAll_odyn_CMIP5'
-for namelist_name in ['KNMI14']:
+for namelist_name in ['CMIP5_glo_LEV20']:
     for SCE in ['rcp45', 'rcp85']: # rcp26, rcp45, rcp60, rcp85
         mm.main(VER, N, MIN_IT, er, namelist_name, SCE)
