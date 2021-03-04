@@ -156,7 +156,7 @@ def read_larmip2_lrf(data_dir, basal_melt):
                  'R4':'Weddell', 'R5':'Peninsula'}
 
     for idb, reg in enumerate(reg_names):
-        path = f'{data_dir}LRF_Lev20/RFunctions/RF_*_{basal_melt}_{reg}.dat'
+        path = f'{data_dir}RF_*_{basal_melt}_{reg}.dat'
         files = glob.glob(path)
 
         for idf, f in enumerate(files):
@@ -204,7 +204,7 @@ def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir,
         nbLRF = 3 # Number of LRF to use. 3 or 5 for LARMIP
         coeff = read_larmip_coeff(data_dir).values
     elif larmip_v == 'LARMIP2':
-        RF = read_larmip2_lrf(data_dir, 'BM08')
+        RF = read_larmip2_lrf(f'{data_dir}LRF_Lev20/RFunctions/', 'BM08')
         # Exclude a model? There are two BISI_LBL...
         nbLRF = len(RF.model)
         coeff = read_larmip_coeff(data_dir)
