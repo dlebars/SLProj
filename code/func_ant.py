@@ -161,7 +161,8 @@ def read_larmip2_lrf(data_dir, basal_melt):
 
         for idf, f in enumerate(files):
             ds = pd.read_csv(f, names=['RF']).to_xarray()
-            ds = ds.expand_dims({'model': [f[77:-12]]})
+            f2 = f.split('/')[-1]
+            ds = ds.expand_dims({'model': [f2[3:-12]]})
             
             if idf ==0:
                 ds2 = ds
