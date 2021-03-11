@@ -181,7 +181,7 @@ def read_larmip2_lrf(data_dir, basal_melt):
     return RF.RF
 
 def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir, 
-                   temp_files, larmip_v, LowPass):
+                   temp_files, larmip_v, delay, LowPass):
     '''Compute the antarctic dynamics contribution to global sea level as in 
     Levermann et al 2014, using linear response functions.'''
 
@@ -230,13 +230,27 @@ def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir,
 
     # Random climate model number: 1-19
     RMod = np.random.randint(0, 19, N) # Select random model indice (0 to 18)
-    AlpCoeff = coeff[:,RMod,0] # dim: region, N
-    # 0 means no time delay between atmospheric and oceanic temperature
+
+    if delay:
+        AlpCoeff = coeff[:,RMod,3] # dim: region, N
+        TimeDelay = np.array(coeff[:,RMod,2], dtype='int')
+        
+        # That could be made faster using fancy indexing
+        # https://stackoverflow.com/questions/20360675/roll-rows-of-a-matrix-independently
+        Td_Lev_d = np.zeros([AlpCoeff.shape[0], Td_Lev.shape[0], Td_Lev.shape[1]])
+        
+        for r in range(AlpCoeff.shape[0]):
+            for t in range(N):
+                Td_Lev_d[r,t,TimeDelay[r,t]:] = Td_Lev[t,:nb_y-TimeDelay[r,t]]
+        
+    else:
+        AlpCoeff = coeff[:,RMod,0] # dim: region, N
+        Td_Lev_d = Td_Lev[np.newaxis,:,:]
         
     # Use following line if Beta should have some external dependence
     #  Beta = Beta_low + UnifDd*(Beta_high - Beta_low) # Modify to obtain random_uniform(7,16,N)
     Beta = np.random.uniform(Beta_low, Beta_high, N)
-    BMelt = AlpCoeff[:,:,np.newaxis] * Td_Lev[np.newaxis,:,:] * Beta[np.newaxis,:,np.newaxis]
+    BMelt = AlpCoeff[:,:,np.newaxis] * Td_Lev_d * Beta[np.newaxis,:,np.newaxis]
     
     if model_corr:
         Rdist = np.zeros([N], dtype=int)

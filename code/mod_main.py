@@ -555,11 +555,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         elif nl.ANT_DYN == 'LEV14':
             UnifDd = np.random.uniform(0, 1, N)
             X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
-                                        files, 'LARMIP', nl.LowPass)
+                                        files, 'LARMIP', True, nl.LowPass)
         elif nl.ANT_DYN == 'LEV20':
             UnifDd = np.random.uniform(0, 1, N)
             X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
-                                        files, 'LARMIP2', nl.LowPass)
+                                        files, 'LARMIP2', True, nl.LowPass)
             
         elif nl.ANT_DYN == 'SROCC':
             X_ant = ant.ant_dyn_srocc(SCE, a1_up_a, a1_lo_a, TIME2, N)
