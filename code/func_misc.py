@@ -2,6 +2,7 @@
 # func_misc.py: Miscellaneous functions
 ###############################################################################
 import glob
+import os
 
 import numpy as np
 from scipy.stats import norm
@@ -22,7 +23,7 @@ def temp_path_AR5(MOD, DIR_T, SCE):
             files.append(file_sel[0])
     return files
 
-def tglob_cmip5( files, SCE, start_date, ye, LowPass, INFO):
+def tglob_cmip5(files, SCE, start_date, ye, LowPass, INFO):
     '''Read the text files of monthly temperature for each CMIP5 model and store
     yearly averged values in and array.
     Output data is in degree Kelvin'''
@@ -60,6 +61,78 @@ def tglob_cmip5( files, SCE, start_date, ye, LowPass, INFO):
         TGLOB = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients) 
     
     return TGLOB
+
+def tglob_cmip6(DIR_T, SCE, start_date, ye, LowPass, INFO):
+    '''Read the NetCDF files of monthly temperature for each CMIP6 model and 
+    store yearly averged values in and array
+    DOES NOT WORK YET: New coode epxects a dataframe, not a numpy array
+    '''
+    
+    ENS = 'r1i1p1f1'
+    nb_y = ye-start_date+1
+    files_all = os.listdir(DIR_T)
+    
+    try:
+        files_all.remove('README')
+    except:
+        print('No README file in folder')
+    
+    info_df = pd.DataFrame(columns=['variable','table_id','model', 'experiment', 'ensemble', 'grid', 'date'])
+    
+    for i in range(len(files_all)):
+        st = files_all[i].split('_')
+        if len(st) != 7:
+            print('WARNING!!! This file name is not standard')
+            print(i)
+            print(st)
+        info_df.loc[i] = st
+    sel_df = info_df[info_df.ensemble.eq(ENS) & info_df.experiment.eq(SCE) &
+                     info_df.table_id.eq('Amon') & info_df.model.ne('BCC-ESM1')]    
+    # Notes:
+    # Removed 'BCC-ESM1' because projections stop in 2055
+    nb_MOD    = len(sel_df)
+    nb_ind_MOD = len(set(sel_df['model']))
+    if nb_MOD != nb_ind_MOD:
+        print('WARNING: Some models are used multiple times')
+        print()
+    if INFO:
+        print('Number of models used for scenario '+ SCE + ' : ' + str(nb_MOD))
+        print('Models: ')
+        display(sel_df)
+    
+    TGLOB    = np.zeros([nb_MOD, nb_y])
+    for m in range(0,nb_MOD):
+        file_name = "_".join(sel_df.iloc[m])
+        # Corresponding historical file (EC-Earth3 has no historical r1i1p1f1)
+        if (sel_df.iloc[m][2] == 'EC-Earth3') and (ENS == 'r1i1p1f1'):
+            hist_df = info_df[info_df.ensemble.eq('r2i1p1f1') &
+                              info_df.experiment.eq('historical') & 
+                              info_df.table_id.eq('Amon') &
+                              info_df.model.eq(sel_df.iloc[m][2])]
+        else:
+            hist_df = info_df[info_df.ensemble.eq(ENS) &
+                              info_df.experiment.eq('historical') & 
+                              info_df.table_id.eq('Amon') &
+                              info_df.model.eq(sel_df.iloc[m][2])]
+        if len(hist_df)  != 1:
+            print('ERROR: There is more/less than one corresponding historical' 
+                  +' file')
+            print(hist_df)
+        hist_name = "_".join(hist_df.iloc[0])
+        TEMP_SCE_ds = xr.open_dataset(DIR_T+file_name)
+        TEMP_HIST_ds = xr.open_dataset(DIR_T+hist_name)
+        TEMP_ALL_ds = xr.concat([TEMP_SCE_ds, TEMP_HIST_ds], 'time')
+        TEMP_ALL_y_ds = TEMP_ALL_ds.groupby('year').mean(dim='time')
+        nb_y_avail = len(TEMP_ALL_y_ds.year.loc[start_date:ye])
+        TGLOB[m,:nb_y_avail] = TEMP_ALL_y_ds.tas.loc[start_date:ye]
+        if (nb_y_avail != nb_y): #and (TEMP_ALL_y_ds.year[0] == start_date)
+            print('Some years are missing for '+sel_df.iloc[m][0]+' '+sel_df.iloc[m][2])
+            print(TEMP_ALL_y_ds.year.loc[start_date:ye].values)
+            print('Filing up the gap by extrapolation')
+            TGLOB[m,-1] = TGLOB[m,-2]
+        
+    return TGLOB
+
 
 def normal_distrib(model_ts, GAM, NormD):
     '''Build a normal distribution for a contributor'''
