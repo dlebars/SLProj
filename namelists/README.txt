@@ -9,9 +9,12 @@
 # LOC_FP = [lat, lon] (Point where the fingerprints are read)
 # IBarE: If True, include the inverse barometer effect, only used for local 
 #        projections. But not necessary (generally small effect).
-# TEMPf: Chose which models to read GMST from. 
+# TEMP: Choose option for global surface air temperature. 
 # Possible choices: "AR5": same models as for IPCC AR5
-#                   "all": all CMIP5 models available
+#                   "CMIP5": all CMIP5 models available
+#                   "AR6": Result of the AR6 assessment, mixing emulator and 
+#                          corrected CMIP6
+#                   "CMIP6": all CMIP6 models available
 # GRE: Greenland dynamics and surface mass balance
 # Possible choices: "IPCC": RCP8.5 is different from other scenarios
 #                   "KNMI14": Dynamics for all scenarios the same (average of both 

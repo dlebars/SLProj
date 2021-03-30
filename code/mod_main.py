@@ -199,17 +199,23 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     if nl.INFO:
         print("### Read Tglob             #################")
     
-    if nl.TEMPf == 'all':
+    if nl.TEMP == 'CMIP5':
         path = DIR_T+'global_tas_Amon_*_'+SCE+'_r1i1p1.dat'
         if nl.INFO:
             print(path)
         files     = glob.glob(path)
-    elif nl.TEMPf == 'AR5':
+        TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.LowPass, nl.INFO)
+    elif nl.TEMP == 'AR5':
         files = misc.temp_path_AR5(MOD, DIR_T, SCE)
+        TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.LowPass, nl.INFO)
+    elif nl.TEMP == 'CMIP6':
+        print('Not tested yet!!!')
+        TGLOB = misc.tglob_cmip6( directory, SCE, start_date, ye, nl.LowPass, nl.INFO)
+    elif np.TEMP == 'AR6':
+        TGLOB = misc.tglob_ar6(SCE, start_date, ye)
     else:
-        print('Option TEMPf: ' + nl.TEMPf + ' is not supported')
+        print('Option TEMP: ' + nl.TEMP + ' is not supported')
     
-    TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.LowPass, nl.INFO)
     TGLOBs = TGLOB.sel(time=slice(ys,None))
 
     # Compute the temperature anomalies for each process using a different 
@@ -305,7 +311,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_Of = odyn.odyn_loc(SCE, MOD, DIR_O, DIR_OG, nl.LOC, 
                                      ref_steric, ye, N, ys, nl.GAM, NormDT, 
                                      nl.LowPass)
-            elif nl.ODYN == 'CMIP5':
+            elif nl.ODYN in ['CMIP5', 'CMIP6']:
                 X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass)
         else:
@@ -315,7 +321,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             elif nl.ODYN == 'IPCC':
                 X_Of = odyn.odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
                 
-            elif nl.ODYN == 'CMIP5':
+            elif nl.ODYN in ['CMIP5', 'CMIP6']:
                 X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass)
 
@@ -787,7 +793,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     "Computations were done with the following options:: " + \
     "Local computations?" + str(nl.LOC) + \
     ", include Inverse Barometer effect: "+ str(nl.IBarE) + \
-    ", GMST option: "+ nl.TEMPf + \
+    ", GMST option: "+ nl.TEMP + \
     ", Greenland SMB and dynamics is: "+ nl.GRE + \
     ", Ocean dynamics is: " + nl.ODYN + \
     ", Antarctic dynamics is: " + nl.ANT_DYN + \
