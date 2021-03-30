@@ -8,6 +8,7 @@ import numpy as np
 from scipy.stats import norm
 import pandas as pd
 import xarray as xr
+from numpy.polynomial import Polynomial as P
 
 def temp_path_AR5(MOD, DIR_T, SCE):
     files     = []
@@ -133,6 +134,56 @@ def tglob_cmip6(DIR_T, SCE, start_date, ye, LowPass, INFO):
         
     return TGLOB
 
+def get_ar6_temp():
+    '''Make a dataframe from the temperature values of table 4.1 (or 4.6?) 
+    of AR6. Normaly relative to 1995–2014 but modify to make it relative to
+    the AR5 reference period 1986-2005.
+    Data in the table refer to the following periods: 
+    2021–2040, 2041–2060, 2081–2100 that we attribute to their middle years.'''
+    
+    central_years = [2005, 2030, 2050, 2090]
+    ssp126 = pd.DataFrame({'mean':[0, 0.6, 0.9, 0.9], '5pc':[0, 0.4, 0.5, 0.5], '95pc':[0, 0.9, 1.3, 1.5]},
+                       index=central_years)
+    ssp126.columns = pd.MultiIndex.from_product([['ssp126'], ssp126.columns])
+    ssp245 = pd.DataFrame({'mean':[0, 0.7, 1.1, 1.8], '5pc':[0, 0.4, 0.8, 1.2], '95pc':[0, 0.9, 1.6, 2.6]},
+                       index=central_years)
+    ssp245.columns = pd.MultiIndex.from_product([['ssp245'], ssp245.columns])
+    ssp585 = pd.DataFrame({'mean':[0, 0.8, 1.5, 3.5], '5pc':[0, 0.5, 1.1, 2.4], '95pc':[0, 1.0, 2.1, 4.8]},
+                       index=central_years)
+    ssp585.columns = pd.MultiIndex.from_product([['ssp585'], ssp585.columns])
+
+    all_df = pd.concat([ssp126, ssp245, ssp585], axis = 1)
+    # Add temperature difference between 1995–2014 and 1986-2005
+    all_df = all_df + 0.156
+    all_df.loc[1995] = 0
+    all_df = all_df.sort_index()
+    
+    return all_df
+
+def tglob_ar6(sce, start_date, ye):
+    '''Provides a few time series of temperature consistent with the AR6 
+    temperature assessment.
+    Assumes normal distribution which is not the case in AR6. Needs to be 
+    revised later.
+    Export a data array.'''
+    
+    N = 50 # Number of time series to generate
+    ar6_temp_df = get_ar6_temp()
+    df = ar6_temp_df[sce].copy()
+    # Assuming a normal distribution (it is not!) the standard devation is:
+    df['sigma'] = (df['95pc'] - df['5pc'])/(2*1.64)
+    
+    NormD = np.random.normal(0, 1, N)
+    years = np.arange(start_date,ye+1)
+    paths = np.zeros([N,len(years)])
+    
+    for i in range(N):
+        p = P.fit(df.index, df['mean']+NormD[i]*df['sigma'], 3)
+        paths[i,:] = p(years)
+    
+    ds = xr.DataArray(paths, coords=[np.arange(N), years] , dims=['model', 'time'])
+    
+    return ds
 
 def normal_distrib(model_ts, GAM, NormD):
     '''Build a normal distribution for a contributor'''
