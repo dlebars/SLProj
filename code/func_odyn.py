@@ -116,7 +116,15 @@ def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass):
             # Change the name of files to avoid this if
             zos_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/CMIP5_zos_{SCE}_*.nc')
         else:
-            zos_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/{mip}_zos_{SCE}_*.nc')
+            hist_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_historical/{mip}_zos_historical_*.nc')
+            sce_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/{mip}_zos_{SCE}_*.nc')
+            zos_ds = xr.concat([hist_ds,sce_ds],'time').sel(model=sce_ds.model)
+            
+            # Add value for 2014 that is missing
+            #->need to rerun ComputeOceanDynamicSeaLevel.py
+            da = zos_ds.sel(time=2013.5).assign_coords(time=2014.5)
+            zos_ds = xr.concat([zos_ds, da], dim='time')
+            zos_ds = zos_ds.sortby(zos_ds.time)
 
         zos_ds = misc.rotate_longitude(zos_ds, 'lon')
         full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(time=slice(ref_steric[0],ye), 
@@ -154,7 +162,7 @@ def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass):
             # goes up to 2100
             dal = da.isel(time=-1).assign_coords(time=da.time[-1]+1) # Last year with new coords
             da = xr.concat([da, dal], dim='time')
-        
+            
         X_O_out[idx,:,:] = misc.normal_distrib(da, Gam, NormD)
 
     return X_O_out
