@@ -96,7 +96,7 @@ def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     X_O_out[2,:,:] = 0     # and anomaly is 0
     return X_O_out
 
-def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass):
+def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, BiasCorr):
     '''Read the CMIP5 and CMIP6 global steric and ocean dynamics contribution
     and compute a probability distribution.'''
     
@@ -135,6 +135,12 @@ def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass):
         # Here we select the intersection
         model_list = list(set(full_sd_da.model.values) & set(MAT_G.model.values))
         MAT_A = full_sd_da.sel(model=model_list).mean(dim=['lat', 'lon'])
+        
+        if BiasCorr:
+            # Use a bias correction based on the comparison of model and 
+            # observations between 1979 and 2018
+            MAT_A = MAT_A*BiasCorr
+        
         MAT = MAT_A + MAT_G
         
     else:

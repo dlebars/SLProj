@@ -78,6 +78,8 @@
 # LowPass: If true filter the time series of stero-dynamics and GMST with a 
 #          second order polynomial fit.
 #          Default option: False
+# BiasCorr: There is a possibility to include a bias correction on the local ocean
+#           dynamics term
 ################################################################################
 Example of namelist file:
 INFO = True

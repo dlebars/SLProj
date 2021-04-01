@@ -313,7 +313,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                                      nl.LowPass)
             elif nl.ODYN in ['CMIP5', 'CMIP6']:
                 X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
-                                      ys, nl.GAM, NormDT, nl.LowPass)
+                                      ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
         else:
             if nl.ODYN == 'KNMI':
                 X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG,
@@ -323,7 +323,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 
             elif nl.ODYN in ['CMIP5', 'CMIP6']:
                 X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
-                                      ys, nl.GAM, NormDT, nl.LowPass)
+                                      ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
 
         X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)
         X_O_A_perc = X_O_A_perc + np.percentile(X_Of[2,:,:], Perc, axis=0)
