@@ -375,7 +375,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         NormDs  = np.random.normal(0, 1, N)   # This distribution is then kept 
                                               #for correlation
-        X_gic = gic.gic_ar5(Td_gic, NormDs)
+        X_gic = gic.gic_ipcc(Td_gic, NormDs, nl.GIC)
 
         for t in range(0,nb_y2): # Use broadcasting?
             X_gic[:,t] = X_gic[:,t]*F_gic2[t]

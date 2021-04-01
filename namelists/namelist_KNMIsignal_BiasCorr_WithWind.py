@@ -8,6 +8,7 @@ TEMP = 'AR6'
 GRE = 'IPCC'
 ODYN = 'CMIP6'
 ANT_DYN = 'KNMI14'
+GIC = 'AR6'
 GAM = 1
 COMB = 'IPCC'
 SaveAllSamples = False
