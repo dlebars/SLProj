@@ -473,7 +473,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             del(Td_a)
             del(NormDl)
 
-        elif nl.ANT_DYN in ['DC16', 'DC16T', 'B19']:
+        elif nl.ANT_DYN in ['DC16', 'DC16T', 'B19', 'AR6']:
             # In these cases the SMB is included in the dynamics
             X_asmb = np.zeros([N,nb_y2])
 
@@ -580,6 +580,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             X_ant_wais = b19.Bamber19('WAIS', UnifP_WAIS, [a1_lo_a, a1_up_a], ys, Td_b)
             X_ant_eais = b19.Bamber19('EAIS', UnifP_EAIS, [0, 0], ys, Td_b)
             X_ant = X_ant_wais + X_ant_eais
+            
+        elif nl.ANT_DYN == 'AR6':
+            # Redefine an independent normal distribution
+            NormDA  = np.random.normal(0, 1, N)
+            X_ant = ant.ant_ar6(TIME2, a1_up_a, a1_lo_a, SCE, NormDA)
         
         X_ant = X_ant + 0.25 # Add 0.25cm, the conribution from 1995 to 2005
 

@@ -234,7 +234,7 @@ def landw_ar5(ys, TIME2, N):
     return X_landw
 
 def proj2order(TIME_loc, a1_up, a1_lo, Delta_up_2100, Delta_lo_2100, Unif):
-    '''Project future values of sea level using present day uncertanty range of 
+    '''Project future values of sea level using present day uncertainty range of 
     the contribution in cm/year and uncertainty of total contribution in 2100 
     in cm. The uncertainty is represented by a uniform distribution.'''
 
@@ -251,6 +251,27 @@ def proj2order(TIME_loc, a1_up, a1_lo, Delta_up_2100, Delta_lo_2100, Unif):
     X_out = np.zeros([N, nb_y_loc])  # Independent of the scenario, size is to add up easily.
     for t in range(0, nb_y_loc):
         X_out[:,t] = Unif * Delta_up[t] + (1-Unif)*Delta_lo[t]
+
+    return X_out
+
+def proj2order_normal(TIME_loc, a1_up, a1_lo, Delta_mean_2100, Delta_std_2100, NormD):
+    '''Project future values of sea level using present day uncertainty range of 
+    the contribution in cm/year and uncertainty of total contribution in 2100 
+    in cm. The uncertainty is represented by a uniform distribution.'''
+
+    nb_y_loc = len(TIME_loc)
+    N = len(NormD)
+    
+    speed_t0 = (a1_up+a1_lo)/2
+
+    # Compute the second order coefficient of the equations:
+    a2_mean  = (Delta_mean_2100 - speed_t0 * (2100-TIME_loc[0]))/(2100 - TIME_loc[0])**2
+    a2_std  = (Delta_std_2100 - a1_up * (2100-TIME_loc[0]))/(2100 - TIME_loc[0])**2
+
+    Delta_mean = speed_t0 * (TIME_loc-TIME_loc[0]) + a2_mean * (TIME_loc-TIME_loc[0])**2
+    Delta_std = Delta_std_2100/(2100-TIME_loc[0])*(TIME_loc-TIME_loc[0])
+    
+    X_out = Delta_mean[np.newaxis,:] + Delta_std[np.newaxis,:]*NormD[:,np.newaxis]
 
     return X_out
 

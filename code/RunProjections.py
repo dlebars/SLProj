@@ -20,7 +20,7 @@ names_col = ('Keywords', 'Values')
 namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
-for namelist_name in ['KNMIsignal_BiasCorr_NoWind']:
+for namelist_name in ['KNMIsignal', 'KNMIsignal_BiasCorr_NoWind', 'KNMIsignal_BiasCorr_WithWind']:
     # Example of namelist_name: 
     #'AR5_glo', 'CMIP5_glo', 'loc_TempAll_odyn_CMIP5',
     # 'KNMIsignal', 'KNMI14' 'KNMIsignal_BiasCorr_NoWind'
