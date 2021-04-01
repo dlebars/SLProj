@@ -86,7 +86,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     start_date = 1980    # Start reading data
     ys = 2006   # Starting point for the integration, if this is changed 
                 # then expect problems in functions
-    ye = 2125   # end year for computation. 2100, 2125
+    ye = nl.LastYear
 
     nb_y = ye-start_date+1       # Period where data needs to be read
     nb_y2 = ye - ys +1           # Period of integration of the model
@@ -211,7 +211,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     elif nl.TEMP == 'CMIP6':
         print('Not tested yet!!!')
         TGLOB = misc.tglob_cmip6( directory, SCE, start_date, ye, nl.LowPass, nl.INFO)
-    elif np.TEMP == 'AR6':
+    elif nl.TEMP == 'AR6':
         TGLOB = misc.tglob_ar6(SCE, start_date, ye)
     else:
         print('Option TEMP: ' + nl.TEMP + ' is not supported')
@@ -630,10 +630,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, 7.4, 1.7, \
                                          UnifDd)
             elif nl.GRE == 'IPCC':
-                if SCE in ['rcp26', 'rcp45', 'rcp60']:
+                if SCE in ['rcp26', 'rcp45', 'rcp60', 'ssp126', 'ssp245']:
                     Delta_gre_up_2100 = 6.3
                     Delta_gre_lo_2100 = 1.4
-                elif SCE == 'rcp85':
+                elif SCE in ['rcp85', 'ssp585']:
                     Delta_gre_up_2100 = 8.5
                     Delta_gre_lo_2100 = 2
                 X_gre  = misc.proj2order(TIME2, a1_up_gdyn, a1_lo_gdyn, \

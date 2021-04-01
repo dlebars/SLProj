@@ -3,6 +3,7 @@
 #
 # Description of variables:
 # INFO: Set to true to get more info in output
+# LastYear: Last year of the computation 2100 or 2125.
 # LOC: If local give the coordinates [lat_N, lat_S, lon_W, lon_E] used for ocean
 # dynamics averaging otherwise False for global sea level projections.
 # For local projections the fingerprint location is also used:
@@ -11,7 +12,7 @@
 #        projections. But not necessary (generally small effect).
 # TEMP: Choose option for global surface air temperature. 
 # Possible choices: "AR5": same models as for IPCC AR5
-#                   "CMIP5": all CMIP5 models available
+#                   "CMIP5": all CMIP5 models available (used to be called 'all')
 #                   "AR6": Result of the AR6 assessment, mixing emulator and 
 #                          corrected CMIP6
 #                   "CMIP6": all CMIP6 models available
@@ -80,6 +81,7 @@
 ################################################################################
 Example of namelist file:
 INFO = True
+LastYear = 2100
 LOC = [60, 51, -3.5, 7.5]
 LOC_FP = [53, 5]
 IBarE = False
