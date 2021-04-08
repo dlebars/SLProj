@@ -2,6 +2,7 @@
 # func_gre.py: Define functions to project Greenland contribution to sea level
 ################################################################################
 import numpy as np
+import func_misc as misc
 
 def fett13( fac, Td_g, NormDl, GRE):
     '''Function used by AR5 and de Vries et al. 2014 for the KNMI scenarios based 
@@ -38,3 +39,28 @@ def fett13( fac, Td_g, NormDl, GRE):
 
     return X_gsmb
 
+def gre_ar6(TIME_loc, a1_up, a1_lo, sce, NormD):
+    '''Total Greenland contribution as in AR6 table 9.9.
+    Compute a discontinuous two sided half-normal distribution from the likely range.
+    These numbers in 2100 are referenced to the period 1995-2014
+    while the code uses 1986-2005 as a reference period but since there is only
+    1 mm between these two periods this is neglected.'''
+    
+    if sce == 'ssp126':
+        l_range = [1., 6., 10.] # 17pc, med, 83pc
+    elif sce == 'ssp245':
+        l_range = [4., 8., 13.]
+    elif sce == 'ssp585':
+        l_range = [9., 13., 18.]
+    elif sce == 'ssp585_hpp': # Low confidence in AR6
+        l_range = [9., 15., 59.]
+    else:
+        print('Scenario not supported by ant_ar6')
+    
+    std_lo_2100 = l_range[1]-l_range[0]
+    std_up_2100 = l_range[2]-l_range[1]
+    
+    X_gre = misc.proj2order_normal_assym(TIME_loc, a1_up, a1_lo, l_range[1], 
+                                         std_lo_2100, std_up_2100, NormD)
+    
+    return X_gre

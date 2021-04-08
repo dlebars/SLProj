@@ -167,6 +167,10 @@ def tglob_ar6(sce, start_date, ye):
     revised later.
     Export a data array.'''
     
+    if sce == 'ssp585_hpp':
+        # hpp scenario from AR6 uses the same temperature as 
+        sce = 'ssp585'
+    
     N = 50 # Number of time series to generate
     ar6_temp_df = get_ar6_temp()
     df = ar6_temp_df[sce].copy()
@@ -385,13 +389,14 @@ def which_mip(sce):
     '''From input scenario return the MIP is corresponds to'''
     
     mip_dic = {'ssp119':'cmip6',
-           'ssp126':'cmip6',
-           'ssp245':'cmip6',
-           'ssp370':'cmip6',
-           'ssp585':'cmip6', 
-           'rcp26':'cmip5', 
-           'rcp45':'cmip5',
-           'rcp60':'cmip5',
-           'rcp85':'cmip5'}
+               'ssp126':'cmip6',
+               'ssp245':'cmip6',
+               'ssp370':'cmip6',
+               'ssp585':'cmip6',
+               'ssp585_hpp':'cmip6',
+               'rcp26':'cmip5', 
+               'rcp45':'cmip5',
+               'rcp60':'cmip5',
+               'rcp85':'cmip5'}
     
     return mip_dic[sce]

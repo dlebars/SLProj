@@ -305,24 +305,32 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             rhoP  = 2 * np.sin( np.pi / 6 * CorrGT)
 
         NormDT = NormD*rhoP + NormDT1*np.sqrt(1 - rhoP**2)
+        
+        # For the hpp scenario the thermal expansion and dynamics are the same as ssp585 
+        if SCE == 'ssp585_hpp':
+            SCE_loc = 'ssp585'
+        else:
+            SCE_loc = SCE
 
         if nl.LOC:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE, MOD, DIR_O, DIR_OG, nl.LOC, 
+                X_Of = odyn.odyn_loc(SCE_loc, MOD, DIR_O, DIR_OG, nl.LOC, 
                                      ref_steric, ye, N, ys, nl.GAM, NormDT, 
                                      nl.LowPass)
             elif nl.ODYN in ['CMIP5', 'CMIP6']:
-                X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
+ 
+                    
+                X_Of = odyn.odyn_cmip(SCE_loc, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
         else:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_glob_knmi(SCE, MOD, nb_y, nb_y2, DIR_O, DIR_OG,
+                X_Of = odyn.odyn_glob_knmi(SCE_loc, MOD, nb_y, nb_y2, DIR_O, DIR_OG,
                                       start_date, ye, N, i_ys, nl.GAM, NormDT)
             elif nl.ODYN == 'IPCC':
-                X_Of = odyn.odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
+                X_Of = odyn.odyn_glob_ipcc(SCE_loc, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
                 
             elif nl.ODYN in ['CMIP5', 'CMIP6']:
-                X_Of = odyn.odyn_cmip(SCE, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
+                X_Of = odyn.odyn_cmip(SCE_loc, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
 
         X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)
@@ -428,6 +436,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             X_gsmb = b19.Bamber19('GIS', UnifP_GIS, [a1_lo_g, a1_up_g], ys, Td_b)
             X_gsmb = X_gsmb + 0.3    # Contribution between 1995 and 2005 in mm
             del(UnifP_GIS)
+            
+        elif nl.GRE == 'AR6':
+            NormDG  = np.random.normal(0, 1, N)
+            X_gsmb = gre.gre_ar6(TIME2, a1_up_g, a1_lo_g, SCE, NormDG)
+            
+        else:
+            print(f'ERROR: GRE option {nl.GRE} is not defined. Check the namelist.')
 
         for t in range(0, nb_y2):
             X_gsmb[:,t] = X_gsmb[:,t] * F_gsmb2[t]
@@ -620,7 +635,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.INFO:
             print("### Greenland dynamics ############################################")
 
-        if nl.GRE == 'B19':
+        if nl.GRE in ['B19', 'AR6']:
             # This contribution is included in SMB in this case
             X_gre = np.zeros([N,nb_y2])
         else:

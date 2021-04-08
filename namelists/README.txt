@@ -23,6 +23,8 @@
 #                   "B19": Greenland contribution from Bamber et al. 2019 SEJ, this
 #                   method does not split between SMB and dynamics so in the code it
 #                   is all attributed to SMB and dynamics is 0 in this case.
+#                   "AR6": Uses the numbers from IPCC AR6 (with half-normal distribution 
+#                   assumption). Also defined for ssp585_hpp.
 # ODYN: Option for Ocean Dynamics
 # Possible choices: "IPCC" can only be used for global analysis (read file 
 #                   distributed by AR5)
@@ -47,8 +49,8 @@
 #                   is all attributed to SMB and dynamics is 0 in this case.
 #                   "SROCC"  IPCC SROCC report, only defined for RCP8.5. For other 
 #                            scenarios SROCC is similar to AR5
-#                   "AR6": Uses the numbers from IPCC AR6 (with normal distribution 
-#                   assumption)
+#                   "AR6": Uses the numbers from IPCC AR6 (with half-normal distribution 
+#                   assumption). Also defined for ssp585_hpp.
 # GIC: Glaciers and ice caps
 # Possible choices: "AR5" or "AR6"
 # GAM: Uncertainty of climate models

@@ -275,7 +275,7 @@ def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir,
 
 def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD):
     '''Total antarctic contribution as in AR6 table 9.9.
-    Compute a normal distribution from the likely range.
+    Compute a discontinuous two sided half-normal distribution from the likely range.
     These numbers in 2100 are referenced to the period 1995-2014
     while the code uses 1986-2005 as a reference period but since there is only
     1 mm between these two periods this is neglected.'''
@@ -298,27 +298,3 @@ def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD):
                                          std_lo_2100, std_up_2100, NormD)
     
     return X_ant
-
-# def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD):
-#     '''Total antarctic contribution as in AR6 table 9.9.
-#     Compute a normal distribution from the likely range.
-#     These numbers in 2100 are referenced to the period 1995-2014
-#     while the code uses 1986-2005 as a reference period but since there is only
-#     1 mm between these two periods this is neglected.'''
-    
-#     if sce == 'ssp126':
-#         l_range = [3, 27]
-#     elif sce == 'ssp245':
-#         l_range = [3, 29]
-#     elif sce == 'ssp585':
-#         l_range = [3, 34]
-#     else:
-#         print('Scenario not supported by ant_ar6')
-    
-#     Delta_mean_2100 = np.mean(l_range)
-#     Delta_std_2100 = (l_range[1]-l_range[0])/2
-    
-#     X_ant = misc.proj2order_normal(TIME_loc, a1_up, a1_lo, Delta_mean_2100, 
-#                                    Delta_std_2100, NormD)
-    
-#     return X_ant
