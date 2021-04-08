@@ -257,7 +257,7 @@ def proj2order(TIME_loc, a1_up, a1_lo, Delta_up_2100, Delta_lo_2100, Unif):
 def proj2order_normal(TIME_loc, a1_up, a1_lo, Delta_mean_2100, Delta_std_2100, NormD):
     '''Project future values of sea level using present day uncertainty range of 
     the contribution in cm/year and uncertainty of total contribution in 2100 
-    in cm. The uncertainty is represented by a uniform distribution.'''
+    in cm. The uncertainty is represented by a normal distribution.'''
 
     nb_y_loc = len(TIME_loc)
     N = len(NormD)
@@ -272,6 +272,36 @@ def proj2order_normal(TIME_loc, a1_up, a1_lo, Delta_mean_2100, Delta_std_2100, N
     Delta_std = Delta_std_2100/(2100-TIME_loc[0])*(TIME_loc-TIME_loc[0])
     
     X_out = Delta_mean[np.newaxis,:] + Delta_std[np.newaxis,:]*NormD[:,np.newaxis]
+
+    return X_out
+
+def proj2order_normal_assym(TIME_loc, a1_up, a1_lo, med_2100, 
+                            std_lo_2100, std_up_2100, NormD):
+    '''Project future values of sea level using present day uncertainty range of 
+    the contribution in cm/year and uncertainty of total contribution in 2100 
+    in cm. The uncertainty is represented by a two half-normal distributions,
+    one above the median and the other one below.
+    The median grows as a 2nd order polynomial and the standard deviations grow 
+    linearly'''
+
+    nb_y_loc = len(TIME_loc)
+    N = len(NormD)
+    
+    speed_t0 = (a1_up+a1_lo)/2
+
+    # Compute the second order coefficient of the equations:
+    a2_med  = (med_2100 - speed_t0 * (2100-TIME_loc[0]))/(2100 - TIME_loc[0])**2
+
+    med = speed_t0 * (TIME_loc-TIME_loc[0]) + a2_med * (TIME_loc-TIME_loc[0])**2
+    std_lo = std_lo_2100/(2100-TIME_loc[0])*(TIME_loc-TIME_loc[0])
+    std_up = std_up_2100/(2100-TIME_loc[0])*(TIME_loc-TIME_loc[0])
+    
+    NormD_up = np.where(NormD>0, NormD, 0)
+    NormD_lo = np.where(NormD<0, NormD, 0)
+    
+    X_out = (med[np.newaxis,:] + 
+             std_lo[np.newaxis,:]*NormD_lo[:,np.newaxis] + 
+             std_up[np.newaxis,:]*NormD_up[:,np.newaxis])
 
     return X_out
 
