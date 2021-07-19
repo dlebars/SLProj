@@ -1,10 +1,14 @@
 INFO = True
-LOC = True
+LastYear = 2100 # Last year of the computation 2100 or 2125.
+# Original box from Hylke: 51-60N, -3.5,7.5E
+LOC = [60, 51, -3.5, 7.5] # lat_N, lat_S, lon_W, lon_E
+LOC_FP = [53, 5] # lat, lon
 IBarE = False
-TEMPf = 'AR5'
+TEMP = 'AR5'
 GRE = 'KNMI14'
 ODYN = 'KNMI'
 ANT_DYN = 'KNMI14'
+GIC = 'AR5'
 GAM = 1
 COMB = 'IPCC'
 SaveAllSamples = False
@@ -19,3 +23,4 @@ NoU_A = False
 NoU_Gl = False
 Decomp = False
 LowPass = True
+BiasCorr = False

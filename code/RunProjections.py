@@ -20,11 +20,12 @@ names_col = ('Keywords', 'Values')
 namelists_dir = '/../namelists/'
 sys.path.append(os.getcwd() + namelists_dir)
 
-for namelist_name in ['KNMIsignal_BiasCorr_NoWind_hpp']:
+for namelist_name in ['KNMIsignal', 'KNMIsignal_BiasCorr_NoWind', 'KNMIsignal_BiasCorr_WithWind']:
     # Example of namelist_name: 
-    #'AR5_glo', 'CMIP5_glo', 'loc_TempAll_odyn_CMIP5', 'KNMI14'
+    #'AR5_glo', 'CMIP5_glo', 'loc_TempAll_odyn_CMIP5', 'KNMI14', 'KNMI14_LowPass'
     # 'KNMIsignal', 'KNMIsignal_BiasCorr_NoWind', 'KNMIsignal_BiasCorr_WithWind'
-    for SCE in ['ssp585_hpp']: 
+    # 
+    for SCE in ['rcp45', 'rcp85']: 
         # CMIP5: 'rcp26', 'rcp45', 'rcp60', 'rcp85'
         # CMIP6: 'ssp126', 'ssp245', 'ssp585', 'ssp585_hpp'
         mm.main(VER, N, MIN_IT, er, namelist_name, SCE)
