@@ -386,7 +386,7 @@ def rotate_longitude(ds, name_lon):
     return ds
 
 def which_mip(sce):
-    '''From input scenario return the MIP is corresponds to'''
+    '''Returns the MIP that corresponds to the input scenario '''
     
     mip_dic = {'ssp119':'cmip6',
                'ssp126':'cmip6',
@@ -400,3 +400,34 @@ def which_mip(sce):
                'rcp85':'cmip5'}
     
     return mip_dic[sce]
+
+def read_zos_ds(data_dir, mip, sce):
+    '''Read both historical and scenario datasets, select the intersecting 
+    models and concatenate the two datasets'''
+    
+    hist_ds = xr.open_mfdataset(
+        f'{data_dir}/Data_{mip}/{mip}_zos_historical/{mip}_zos_historical_*.nc')
+    sce_ds = xr.open_mfdataset(
+        f'{data_dir}/Data_{mip}/{mip}_zos_{sce}/{mip}_zos_{sce}_*.nc')
+    model_intersection = list(set(hist_ds.model.values) & 
+                              set(sce_ds.model.values))
+    model_intersection.sort()
+    tot_ds = xr.concat([hist_ds,sce_ds],'time').sel(model=model_intersection)
+    
+    return tot_ds
+
+def read_zostoga_ds(data_dir, mip, sce):
+    '''Read both historical and scenario datasets, select the intersecting 
+    models and concatenate the two datasets'''
+    
+    hist_ds = xr.open_mfdataset(
+        f'{data_dir}/Data_{mip}/{mip}_zostoga/{mip}_zostoga_historical_*.nc')
+    sce_ds = xr.open_mfdataset(
+        f'{data_dir}/Data_{mip}/{mip}_zostoga/{mip}_zostoga_{sce}_*.nc')
+
+    model_intersection = list(set(hist_ds.model.values) & 
+                              set(sce_ds.model.values))
+    model_intersection.sort()
+    tot_ds = xr.concat([hist_ds,sce_ds],'time').sel(model=model_intersection)
+    
+    return tot_ds

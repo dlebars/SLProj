@@ -35,7 +35,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     ROOT = '/Users/dewilebars/Projects/Project_ProbSLR/Data_Proj/'
     DIR_T = f'{ROOT}Data_AR5/Tglobal/'
     DIR_IPCC = f'{ROOT}Data_AR5/Final_Projections/'
-    DIR_CMIP = '../../CMIP_SeaLevel/outputs/'
     DIR_OUT = '../outputs/'       # Output directory
     
     if nl.LOC:
@@ -317,10 +316,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_Of = odyn.odyn_loc(SCE_loc, MOD, DIR_O, DIR_OG, nl.LOC, 
                                      ref_steric, ye, N, ys, nl.GAM, NormDT, 
                                      nl.LowPass)
-            elif nl.ODYN in ['CMIP5', 'CMIP6']:
- 
-                    
-                X_Of = odyn.odyn_cmip(SCE_loc, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
+            elif nl.ODYN in ['CMIP5', 'CMIP6']:                   
+                X_Of = odyn.odyn_cmip(SCE_loc, ROOT, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
         else:
             if nl.ODYN == 'KNMI':
@@ -330,7 +327,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_Of = odyn.odyn_glob_ipcc(SCE_loc, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
                 
             elif nl.ODYN in ['CMIP5', 'CMIP6']:
-                X_Of = odyn.odyn_cmip(SCE_loc, DIR_CMIP, nl.LOC, ref_steric, ye, N, 
+                X_Of = odyn.odyn_cmip(SCE_loc, ROOT, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
 
         X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)

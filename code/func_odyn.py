@@ -96,7 +96,7 @@ def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     X_O_out[2,:,:] = 0     # and anomaly is 0
     return X_O_out
 
-def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, BiasCorr):
+def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, BiasCorr):
     '''Read the CMIP5 and CMIP6 global steric and ocean dynamics contribution
     and compute a probability distribution.'''
     
@@ -104,29 +104,15 @@ def odyn_cmip(SCE, DIR_CMIP, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, Bi
     nb_y2 = ye - ys +1
     
     # Read global steric
-    full_st_da = xr.open_dataset(f'{DIR_CMIP}/{mip}_SeaLevel_{SCE}_zostoga_1986_2100.nc')
+    full_st_da = misc.read_zostoga_ds(data_dir, mip, SCE)
     # Convert from m to cm
     MAT_G = full_st_da['zostoga_corrected'].sel(time=slice(ref_steric[0],ye))*100
     
-
     if LOC:
         lat_N, lat_S, lon_W, lon_E = LOC
 
-        if mip == 'cmip5':
-            # Change the name of files to avoid this if
-            zos_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/CMIP5_zos_{SCE}_*.nc')
-        else:
-            hist_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_historical/{mip}_zos_historical_*.nc')
-            sce_ds = xr.open_mfdataset(f'{DIR_CMIP}/{mip}_zos_{SCE}/{mip}_zos_{SCE}_*.nc')
-            zos_ds = xr.concat([hist_ds,sce_ds],'time').sel(model=sce_ds.model)
+        zos_ds = misc.read_zos_ds(data_dir, mip, SCE)
             
-            # Add value for 2014 that is missing
-            #->need to rerun ComputeOceanDynamicSeaLevel.py
-            da = zos_ds.sel(time=2013.5).assign_coords(time=2014.5)
-            zos_ds = xr.concat([zos_ds, da], dim='time')
-            zos_ds = zos_ds.sortby(zos_ds.time)
-
-        zos_ds = misc.rotate_longitude(zos_ds, 'lon')
         full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(time=slice(ref_steric[0],ye), 
                                 lat=slice(lat_S,lat_N), 
                                 lon=slice(lon_W,lon_E))
