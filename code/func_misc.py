@@ -24,30 +24,129 @@ def temp_path_AR5(MOD, DIR_T, SCE):
             files.append(file_sel[0])
     return files
 
-def tglob_cmip5(files, SCE, start_date, ye, LowPass, INFO):
+# def tglob_cmip5(files, SCE, start_date, ye, LowPass, INFO):
+#     '''Read the text files of monthly temperature for each CMIP5 model and store
+#     yearly averged values in and array.
+#     Output data is in degree Kelvin'''
+    
+#     nb_y = ye-start_date+1
+
+#     if INFO:
+#         print('Number of models used for scenario '+ SCE + ' : ' + str(len(files)))
+#         print('Models path: ')
+#         print("\n".join(files))
+
+#     col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
+#                  'Sep', 'Oct', 'Nov', 'Dec']
+    
+#     for m in range(0,len(files)):
+#         TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, \
+#                                names=col_names)
+#         TEMP = TEMP.set_index('Year')
+#         TGLOBi = xr.DataArray(TEMP.mean(axis=1))
+#         mod = files[m][86:-17] # Select model names from path
+#         TGLOBi = TGLOBi.expand_dims({'model':[mod]})
+
+#         if m==0:
+#             TGLOB = TGLOBi
+#         else:
+#             TGLOB = xr.concat([TGLOB, TGLOBi], dim='model')
+
+#     TGLOB = TGLOB.rename({'Year':'time'})
+#     TGLOB = TGLOB.sel(time=slice(start_date,ye))
+
+#     if LowPass:
+#         new_time = xr.DataArray( np.arange(start_date,ye+1), dims='time', 
+#                 coords=[np.arange(start_date,ye+1)], name='time' )
+#         fit_coeff = TGLOB.polyfit('time', 2)
+#         TGLOB = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients) 
+    
+#     return TGLOB
+
+def select_tglob_cmip6_files(data_dir, sce, verbose=False):
+    '''The file name of cmip6 tglob files from the climate explorer contains 
+    some information about the variant as well. Only one needs to be chosen 
+    and the name of the model needs to be cleaned.'''
+    
+    path = f'{data_dir}global_tas_mon_*_{sce}_000.dat'
+    files  = glob.glob(path)
+
+    model_names = []
+    for f in files:
+        file_name_no_path = f.split('/')[-1]
+        model_name = file_name_no_path.split('_')[3]
+        model_names.append(model_name)
+
+    model_names.sort()
+
+    clean_model_names = []
+    lp_list = []
+    for m in model_names:
+        lp = m.split('-')[-1]
+        lp_list.append(lp)
+        if lp in ['f2', 'p2', 'p1', 'p3', 'f3']:
+            clean_model_names.append(m[:-3])
+        else:
+            clean_model_names.append(m)
+
+    df = pd.DataFrame({'model_names': model_names,
+                       'clean_model_names': clean_model_names,
+                       'fp': lp_list})
+
+    for m in df['clean_model_names']:
+        if (list(df['clean_model_names']).count(m) > 1):
+            fp_choice = df[df.clean_model_names==m]['fp']
+            ind = df[(df.fp!=fp_choice.iloc[0]) & (df.clean_model_names==m)].index
+            
+            if verbose:
+                print(f'Multiple variants of {m}')
+                print('Available variants')
+                print(fp_choice)
+                print(f'Choosing {fp_choice.iloc[0]}')
+                
+            df.drop(ind, inplace=True)
+
+    file_list = []
+    for m in df.model_names:
+        file_list.append(f'{data_dir}global_tas_mon_{m}_{sce}_000.dat')
+    
+    df['file_names'] = file_list
+    
+    return df
+
+def tglob_cmip(data_dir, mip, sce, start_date, ye, LowPass=False):
     '''Read the text files of monthly temperature for each CMIP5 model and store
-    yearly averged values in and array.
+    yearly averged values in an xarray DataArray.
     Output data is in degree Kelvin'''
     
     nb_y = ye-start_date+1
-
-    if INFO:
-        print('Number of models used for scenario '+ SCE + ' : ' + str(len(files)))
-        print('Models path: ')
-        print("\n".join(files))
-
-    col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
-                 'Sep', 'Oct', 'Nov', 'Dec']
     
-    for m in range(0,len(files)):
-        TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, \
-                               names=col_names)
+    if mip=='CMIP5':
+        path = f'{data_dir}global_tas_Amon_*_{sce}_r1i1p1.dat'
+        files = glob.glob(path)   
+        model_names = [f[86:-17] for f in files]
+        df = pd.DataFrame({'clean_model_names': model_names, 'file_names': files})
+        
+    elif mip=='CMIP6':
+        df = select_tglob_cmip6_files(data_dir, sce)
+        
+    else:
+        print(f'ERROR: Value of TEMP: {mip} not recognized')
+
+    col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+                 'Sep', 'Oct', 'Nov', 'Dec']
+
+    for i in range(len(df)):
+        TEMP = pd.read_csv(df.file_names.iloc[i], 
+                           comment='#', 
+                           delim_whitespace=True,
+                           names=col_names)
         TEMP = TEMP.set_index('Year')
         TGLOBi = xr.DataArray(TEMP.mean(axis=1))
-        mod = files[m][86:-17] # Select model names from path
+        mod = df.clean_model_names.iloc[i]
         TGLOBi = TGLOBi.expand_dims({'model':[mod]})
 
-        if m==0:
+        if i==0:
             TGLOB = TGLOBi
         else:
             TGLOB = xr.concat([TGLOB, TGLOBi], dim='model')
@@ -61,77 +160,6 @@ def tglob_cmip5(files, SCE, start_date, ye, LowPass, INFO):
         fit_coeff = TGLOB.polyfit('time', 2)
         TGLOB = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients) 
     
-    return TGLOB
-
-def tglob_cmip6(DIR_T, SCE, start_date, ye, LowPass, INFO):
-    '''Read the NetCDF files of monthly temperature for each CMIP6 model and 
-    store yearly averged values in and array
-    DOES NOT WORK YET: New coode epxects a dataframe, not a numpy array
-    '''
-    
-    ENS = 'r1i1p1f1'
-    nb_y = ye-start_date+1
-    files_all = os.listdir(DIR_T)
-    
-    try:
-        files_all.remove('README')
-    except:
-        print('No README file in folder')
-    
-    info_df = pd.DataFrame(columns=['variable','table_id','model', 'experiment', 'ensemble', 'grid', 'date'])
-    
-    for i in range(len(files_all)):
-        st = files_all[i].split('_')
-        if len(st) != 7:
-            print('WARNING!!! This file name is not standard')
-            print(i)
-            print(st)
-        info_df.loc[i] = st
-    sel_df = info_df[info_df.ensemble.eq(ENS) & info_df.experiment.eq(SCE) &
-                     info_df.table_id.eq('Amon') & info_df.model.ne('BCC-ESM1')]    
-    # Notes:
-    # Removed 'BCC-ESM1' because projections stop in 2055
-    nb_MOD    = len(sel_df)
-    nb_ind_MOD = len(set(sel_df['model']))
-    if nb_MOD != nb_ind_MOD:
-        print('WARNING: Some models are used multiple times')
-        print()
-    if INFO:
-        print('Number of models used for scenario '+ SCE + ' : ' + str(nb_MOD))
-        print('Models: ')
-        display(sel_df)
-    
-    TGLOB    = np.zeros([nb_MOD, nb_y])
-    for m in range(0,nb_MOD):
-        file_name = "_".join(sel_df.iloc[m])
-        # Corresponding historical file (EC-Earth3 has no historical r1i1p1f1)
-        if (sel_df.iloc[m][2] == 'EC-Earth3') and (ENS == 'r1i1p1f1'):
-            hist_df = info_df[info_df.ensemble.eq('r2i1p1f1') &
-                              info_df.experiment.eq('historical') & 
-                              info_df.table_id.eq('Amon') &
-                              info_df.model.eq(sel_df.iloc[m][2])]
-        else:
-            hist_df = info_df[info_df.ensemble.eq(ENS) &
-                              info_df.experiment.eq('historical') & 
-                              info_df.table_id.eq('Amon') &
-                              info_df.model.eq(sel_df.iloc[m][2])]
-        if len(hist_df)  != 1:
-            print('ERROR: There is more/less than one corresponding historical' 
-                  +' file')
-            print(hist_df)
-        hist_name = "_".join(hist_df.iloc[0])
-        TEMP_SCE_ds = xr.open_dataset(DIR_T+file_name)
-        TEMP_HIST_ds = xr.open_dataset(DIR_T+hist_name)
-        TEMP_ALL_ds = xr.concat([TEMP_SCE_ds, TEMP_HIST_ds], 'time')
-        TEMP_ALL_y_ds = TEMP_ALL_ds.groupby('year').mean(dim='time')
-        nb_y_avail = len(TEMP_ALL_y_ds.year.loc[start_date:ye])
-        TGLOB[m,:nb_y_avail] = TEMP_ALL_y_ds.tas.loc[start_date:ye]
-        if (nb_y_avail != nb_y): #and (TEMP_ALL_y_ds.year[0] == start_date)
-            print('Some years are missing for '+sel_df.iloc[m][0]+' '+sel_df.iloc[m][2])
-            print(TEMP_ALL_y_ds.year.loc[start_date:ye].values)
-            print('Filing up the gap by extrapolation')
-            TGLOB[m,-1] = TGLOB[m,-2]
-        
     return TGLOB
 
 def get_ar6_temp():
