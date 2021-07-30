@@ -101,7 +101,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     ####
     TIME       = np.arange( start_date, ye + 1 )
     TIME2      = np.arange( ys, ye + 1, 1 )
-    ind_d      = np.where(TIME2 % 10 == 0)[0] # Select the indices of 2010, 2020... 2100
+    # This option keeps all years. It uses a lot of memory
+    ind_d      = np.arange(len(TIME2)) 
+    # This option selects 1 in 10 years to save memory
+    #ind_d = np.where(TIME2 % 10 == 0)[0] # Select the indices of 2010, 2020... 2100
     nb_yd      = len(ind_d)
     
     #### Read fingerprints, some are time dependent so make all of them time 

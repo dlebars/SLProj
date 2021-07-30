@@ -18,15 +18,55 @@ import xarray as xr
 
 import func_misc as misc
 
-SCE = 'rcp85'
+SCE = 'ssp245' #'rcp85'
 PercS = 95 # Percentile of interest
-namelist_name = 'CMIP5_glo_LEV20' #RECEIPT_D73
+namelist_name = 'RECEIPT_D73' #CMIP5_glo_LEV20, RECEIPT_D73
+#YEARS = np.arange(2006,2125)
+YEARS = np.arange(2123,2125)
 
-# !!! Could be made more efficient for dates after 2100 by extrapolating dynamics only once
-for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
+data_dir = '../../Data_Proj/'
+DIR_F = data_dir+'Data_AR5/Fingerprints/'
+DIR_GIA = data_dir+'GIA/ICE-6G_VM5a/'
+DIR_OUT = '../outputs/'
+
+# Read GIA fingerprint
+fgia = xr.open_dataset(DIR_GIA+'dsea.1grid_O512_regridded.nc')
+fgia = fgia.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
+
+print(f'Computing maps for scenario: {SCE}')
+print(f'And percentile: {PercS}')
+
+# Read ocean dynamics and extrapolate if necessary
+DIR_CDE  = '/Users/dewilebars/Projects/Project_ProbSLR/CMIP_SeaLevel/outputs/'
+fcde = misc.read_zos_ds(data_dir, SCE)
+CDE_mean = fcde.CorrectedReggrided_zos.mean(dim='model')
+
+if YEARS[-1] > 2100:
+    new_time = xr.DataArray(np.array(YEARS+0.5), dims='time', 
+                coords=[np.array(YEARS+0.5)], name='time' )
+    fit_coeff = CDE_mean.polyfit('time', 2)
+    CDE_mean = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients)
+
+# Read global sea level projection
+#fcomp = xr.open_dataset(f'../outputs/ref_proj/SeaLevelPerc_{namelist_name}_{SCE}.nc')
+fcomp = xr.open_dataset(f'../outputs/SeaLevelPerc_{namelist_name}_{SCE}.nc')
+
+# Read fingerprints
+f_gic = xr.open_dataset(f'{DIR_F}Relative_GLACIERS.nc', decode_times=False)
+f_gic = f_gic.assign_coords({'time': np.arange(1986,2101)})
+f_gic = f_gic.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
+
+f_ic = xr.open_dataset(f'{DIR_F}Relative_icesheets.nc')/100
+f_ic = f_ic.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
+
+f_gw = xr.open_dataset(f'{DIR_F}Relative_GROUNDWATER.nc', decode_times=False)
+f_gw = f_gw.assign_coords({'time': np.arange(1986,2101)})
+f_gw = f_gw.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
+
+for Year in YEARS:
 
     print('#######################################################################')
-    print(f'Computing maps for scenario: {SCE}, percentile: {PercS}')
+    print(f'Year: {Year}')
 
     GAM   = 1.0  #!!! This depends on the projection, ideally it should be read from 
                  # the results of the probabilistic projection
@@ -35,17 +75,9 @@ for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
                  # This depends on the meaning of the uncertainty map.
 
     nb_years = Year - (2005+1986)/2 # Should be read from inputs
-    data_dir = '../../Data_Proj/'
-    DIR_F = data_dir+'Data_AR5/Fingerprints/'
-    DIR_GIA = data_dir+'GIA/ICE-6G_VM5a/'
-    DIR_OUT = '../outputs/'
 
-    fgia = xr.open_dataset(DIR_GIA+'dsea.1grid_O512_regridded.nc')
-    fgia = fgia.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
     X_gia = (fgia.Dsea_250)*nb_years/10 # Convert from mm/year to cm
     X_gia = X_gia.assign_coords({'proc_s': 'GIA'})
-
-    fcomp = xr.open_dataset(f'../outputs/ref_proj/SeaLevelPerc_{namelist_name}_{SCE}.nc')
 
     print('Processes: ')
     print(fcomp.proc_s.values)
@@ -57,34 +89,13 @@ for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
     print('Sum of contributors')
     print(sum(decomp.sel(percentiles=PercS).values))
 
-    ### Ocean dynamics effects
-    DIR_CDE  = '/Users/dewilebars/Projects/Project_ProbSLR/CMIP_SeaLevel/outputs/'
-#    fcde     = xr.open_mfdataset(f'{DIR_CDE}cmip5_zos_{SCE}/*_zos_{SCE}*')
-    fcde = misc.read_zos_ds(data_dir, SCE)
-    CDE_mean = fcde.CorrectedReggrided_zos.mean(dim='model') #.sel(time=Year+0.5)
-
-    if Year > 2100.5:
-        new_time = xr.DataArray( np.array([Year+0.5]), dims='time', 
-                    coords=[np.array([Year+0.5])], name='time' )
-        fit_coeff = CDE_mean.polyfit('time', 2)
-        CDE_mean = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients)
-    
-    CDE_mean = CDE_mean.sel(time=Year+0.5)
-    CDE_mean = xr.where( CDE_mean==0, np.nan, CDE_mean)
-    #CDE_std = fcde.sel(time=Year+0.5).std(dim='model')
+    ### Ocean dynamics effects    
+    CDE_mean_sel = CDE_mean.sel(time=Year+0.5)
+    CDE_mean_sel = xr.where( CDE_mean_sel==0, np.nan, CDE_mean_sel)
+    #CDE_std = fcde.sel(time=Year).std(dim='model')
 
     #### Read fingerprints
-    f_gic = xr.open_dataset(f'{DIR_F}Relative_GLACIERS.nc', decode_times=False)
-    f_gic = f_gic.assign_coords({'time': np.arange(1986,2101)})
-    f_gic = f_gic.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
     finger_gic = f_gic.RSL.sel(time=Year, method='nearest')/100 # Convert from % to fraction
-
-    f_ic = xr.open_dataset(f'{DIR_F}Relative_icesheets.nc')/100
-    f_ic = f_ic.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
-
-    f_gw = xr.open_dataset(f'{DIR_F}Relative_GROUNDWATER.nc', decode_times=False)
-    f_gw = f_gw.assign_coords({'time': np.arange(1986,2101)})
-    f_gw = f_gw.rename_dims({'longitude' : 'lon', 'latitude' : 'lat'})
     finger_gw = f_gw.GROUND.sel(time=Year, method='nearest')/100 # Convert from % to fraction
 
     #### Compute each component
@@ -92,7 +103,7 @@ for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
     # the fingerprint of Antarctica is 2/3 dynamics and 1/3 smb, this is not the 
     # case but since East Antarctica also looses a lot of mass in this scenario
     # it is more accurate to use a mixture of smb and dyn fingerprints since dyn
-    # is only located in west Antarctica
+    # is only located in west Antarctica.
 
     X_gic = decomp.sel(proc_s='Glaciers', percentiles=PercS) * finger_gic
     X_gsmb = decomp.sel(proc_s='Green. SMB', percentiles=PercS) * f_ic.SMB_GRE
@@ -103,7 +114,7 @@ for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
     X_gdyn = decomp.sel(proc_s='Green dyn.', percentiles=PercS) * f_ic.DYN_GRE
     X_te   = decomp.sel(proc_s='Thermal exp.', percentiles=PercS)
     # Adding uncertainty or not in climate dynamics is a difficult choice
-    X_cde  = CDE_mean #+ CDE_std*GAM*cdfnor_x(tofloat(PercS)/100.,0,1)
+    X_cde  = CDE_mean_sel #+ CDE_std*GAM*cdfnor_x(tofloat(PercS)/100.,0,1)
     X_sd = X_te + X_cde
     X_sd = X_sd.assign_coords({'proc_s': 'Stero-dynamics'})
 
@@ -130,22 +141,29 @@ for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
     ds['TotalSL'].attrs['long_name'] = (f'Total relative sea level change in {Year}'+
                                         ' relative to the period 1986-2005')
 
-    ### Compute the weigthed average as a test
+    ### Compute the weigthed average
     weights = np.cos(np.deg2rad(ds.lat))
     weights.name = 'weights'
     area_mean = ds['TotalSL'].weighted(weights).mean(('lon', 'lat'))
-    print('Weighted average of TotalSL to test:')
+    print('Weighted average of TotalSL:')
     print(area_mean.values)
 
     ds['area_weighted_mean'] = area_mean
 
-    ##### Export outputs as a NetCDF file
+    ### Add to a common dataset with time dimension
+    ds = ds.expand_dims(dim={'time' : [Year]})
+    
+    if Year == YEARS[0]:
+        tot_ds = ds
+    else:
+        tot_ds = xr.concat([tot_ds, ds], dim='time')
+    
+##### Export outputs as a NetCDF file
+tot_ds.attrs['source_file'] = 'This NetCDF file was built from BuildTotalSeaLevelMaps.py'
+tot_ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
 
-    ds.attrs['source_file'] = 'This NetCDF file was built from BuildTotalSeaLevelMaps.py'
-    ds.attrs['creation_date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
-
-    NameOutput = f'{DIR_OUT}SeaLevelMap_{namelist_name}_{SCE}_Perc{PercS}_{Year}.nc'
-    if os.path.isfile(NameOutput):
-        os.remove(NameOutput)
-    ds.to_netcdf(NameOutput)
+NameOutput = f'{DIR_OUT}SeaLevelMap_{namelist_name}_{SCE}_Perc{PercS}_{YEARS[0]}_{YEARS[-1]}.nc'
+if os.path.isfile(NameOutput):
+    os.remove(NameOutput)
+tot_ds.to_netcdf(NameOutput)
 
