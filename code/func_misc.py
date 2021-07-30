@@ -35,45 +35,6 @@ def temp_path_AR5(DIR_T, SCE):
             files.append(file_sel[0])
     return files
 
-# def tglob_cmip5(files, SCE, start_date, ye, LowPass, INFO):
-#     '''Read the text files of monthly temperature for each CMIP5 model and store
-#     yearly averged values in and array.
-#     Output data is in degree Kelvin'''
-    
-#     nb_y = ye-start_date+1
-
-#     if INFO:
-#         print('Number of models used for scenario '+ SCE + ' : ' + str(len(files)))
-#         print('Models path: ')
-#         print("\n".join(files))
-
-#     col_names = ['Year', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', \
-#                  'Sep', 'Oct', 'Nov', 'Dec']
-    
-#     for m in range(0,len(files)):
-#         TEMP     = pd.read_csv(files[m], comment='#', delim_whitespace=True, \
-#                                names=col_names)
-#         TEMP = TEMP.set_index('Year')
-#         TGLOBi = xr.DataArray(TEMP.mean(axis=1))
-#         mod = files[m][86:-17] # Select model names from path
-#         TGLOBi = TGLOBi.expand_dims({'model':[mod]})
-
-#         if m==0:
-#             TGLOB = TGLOBi
-#         else:
-#             TGLOB = xr.concat([TGLOB, TGLOBi], dim='model')
-
-#     TGLOB = TGLOB.rename({'Year':'time'})
-#     TGLOB = TGLOB.sel(time=slice(start_date,ye))
-
-#     if LowPass:
-#         new_time = xr.DataArray( np.arange(start_date,ye+1), dims='time', 
-#                 coords=[np.arange(start_date,ye+1)], name='time' )
-#         fit_coeff = TGLOB.polyfit('time', 2)
-#         TGLOB = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients) 
-    
-#     return TGLOB
-
 def select_tglob_cmip6_files(data_dir, sce, verbose=False):
     '''The file name of cmip6 tglob files from the climate explorer contains 
     some information about the variant as well. Only one needs to be chosen 
