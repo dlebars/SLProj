@@ -422,10 +422,11 @@ def which_mip(sce):
     
     return mip_dic[sce]
 
-def read_zos_ds(data_dir, mip, sce):
+def read_zos_ds(data_dir, sce):
     '''Read both historical and scenario datasets, select the intersecting 
     models and concatenate the two datasets'''
     
+    mip = which_mip(sce)
     hist_ds = xr.open_mfdataset(
         f'{data_dir}/Data_{mip}/{mip}_zos_historical/{mip}_zos_historical_*.nc')
     sce_ds = xr.open_mfdataset(
@@ -437,10 +438,11 @@ def read_zos_ds(data_dir, mip, sce):
     
     return tot_ds
 
-def read_zostoga_ds(data_dir, mip, sce):
+def read_zostoga_ds(data_dir, sce):
     '''Read both historical and scenario datasets, select the intersecting 
     models and concatenate the two datasets'''
     
+    mip = which_mip(sce)
     hist_ds = xr.open_mfdataset(
         f'{data_dir}/Data_{mip}/{mip}_zostoga/{mip}_zostoga_historical_*.nc')
     sce_ds = xr.open_mfdataset(

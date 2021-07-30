@@ -7,8 +7,7 @@
 # - Run the SLP code with the option "Decomp = True" this outputs a 
 # decomposition of total sea level into each contributor.
 # - Prepare the ocean dynamical part. In the CMIP_SeaLevel repo.
-# - Run BuildTotalSeaLevelMaps.ncl to produce a plot of the total relative sea level
-# change and its contributions and export the results in a netCDF file.
+# - You are ready to run BuildTotalSeaLevelMaps.py
 ################################################################################
 
 import os
@@ -17,12 +16,14 @@ from datetime import datetime
 import numpy as np
 import xarray as xr
 
+import func_misc as misc
+
 SCE = 'rcp85'
 PercS = 95 # Percentile of interest
-namelist_name = 'CMIP5_glo_LEV20'
+namelist_name = 'CMIP5_glo_LEV20' #RECEIPT_D73
 
 # !!! Could be made more efficient for dates after 2100 by extrapolating dynamics only once
-for Year in [2020, 2120]: #2020, 2050, 2080, 2100, 2120
+for Year in [2020, 2040, 2060, 2080, 2100, 2120]:
 
     print('#######################################################################')
     print(f'Computing maps for scenario: {SCE}, percentile: {PercS}')
@@ -33,7 +34,7 @@ for Year in [2020, 2120]: #2020, 2050, 2080, 2100, 2120
                  # have a very high average.
                  # This depends on the meaning of the uncertainty map.
 
-    nb_years = Year - (2005+1986)/2 # Could be read from inputs
+    nb_years = Year - (2005+1986)/2 # Should be read from inputs
     data_dir = '../../Data_Proj/'
     DIR_F = data_dir+'Data_AR5/Fingerprints/'
     DIR_GIA = data_dir+'GIA/ICE-6G_VM5a/'
@@ -58,7 +59,8 @@ for Year in [2020, 2120]: #2020, 2050, 2080, 2100, 2120
 
     ### Ocean dynamics effects
     DIR_CDE  = '/Users/dewilebars/Projects/Project_ProbSLR/CMIP_SeaLevel/outputs/'
-    fcde     = xr.open_mfdataset(f'{DIR_CDE}cmip5_zos_{SCE}/*_zos_{SCE}*')
+#    fcde     = xr.open_mfdataset(f'{DIR_CDE}cmip5_zos_{SCE}/*_zos_{SCE}*')
+    fcde = misc.read_zos_ds(data_dir, SCE)
     CDE_mean = fcde.CorrectedReggrided_zos.mean(dim='model') #.sel(time=Year+0.5)
 
     if Year > 2100.5:

@@ -100,18 +100,17 @@ def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, Bi
     '''Read the CMIP5 and CMIP6 global steric and ocean dynamics contribution
     and compute a probability distribution.'''
     
-    mip = misc.which_mip(SCE)
     nb_y2 = ye - ys +1
     
     # Read global steric
-    full_st_da = misc.read_zostoga_ds(data_dir, mip, SCE)
+    full_st_da = misc.read_zostoga_ds(data_dir, SCE)
     # Convert from m to cm
     MAT_G = full_st_da['zostoga_corrected'].sel(time=slice(ref_steric[0],ye))*100
     
     if LOC:
         lat_N, lat_S, lon_W, lon_E = LOC
 
-        zos_ds = misc.read_zos_ds(data_dir, mip, SCE)
+        zos_ds = misc.read_zos_ds(data_dir, SCE)
             
         full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(time=slice(ref_steric[0],ye), 
                                 lat=slice(lat_S,lat_N), 
