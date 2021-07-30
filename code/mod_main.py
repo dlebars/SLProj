@@ -33,7 +33,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     nl = importlib.import_module(f'namelist_{namelist_name}')
 
     ROOT = '/Users/dewilebars/Projects/Project_ProbSLR/Data_Proj/'
-    DIR_T = f'{ROOT}Data_AR5/Tglobal/'
     DIR_IPCC = f'{ROOT}Data_AR5/Final_Projections/'
     DIR_OUT = '../outputs/'       # Output directory
     
@@ -75,10 +74,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         nb_comp = len(NameComponents)
     
     #List of model names
-    MOD = ["ACCESS1-0","BCC-CSM1-1","CanESM2","CNRM-CM5","CSIRO-Mk3-6-0","GFDL-ESM2G", \
-        "GFDL-ESM2M","GISS-E2-R","HadGEM2-CC","HadGEM2-ES","inmcm4","IPSL-CM5A-LR", \
-        "IPSL-CM5A-MR","MIROC5","MIROC-ESM-CHEM","MIROC-ESM","MPI-ESM-LR","MPI-ESM-MR",\
-        "MRI-CGCM3","NorESM1-ME","NorESM1-M"]
+    MOD = misc.model_selection_ar5()
     nb_MOD_AR5 = len(MOD)
     
     ### General parameters
@@ -197,24 +193,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     ###########################################################################
     if nl.INFO:
         print("### Read Tglob             #################")
-    
-    if nl.TEMP == 'CMIP5':
-        path = DIR_T+'global_tas_Amon_*_'+SCE+'_r1i1p1.dat'
-        if nl.INFO:
-            print(path)
-        files     = glob.glob(path)
-        TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.LowPass, nl.INFO)
-    elif nl.TEMP == 'AR5':
-        files = misc.temp_path_AR5(MOD, DIR_T, SCE)
-        TGLOB = misc.tglob_cmip5( files, SCE, start_date, ye, nl.LowPass, nl.INFO)
-    elif nl.TEMP == 'CMIP6':
-        print('Not tested yet!!!')
-        TGLOB = misc.tglob_cmip6( directory, SCE, start_date, ye, nl.LowPass, nl.INFO)
-    elif nl.TEMP == 'AR6':
-        TGLOB = misc.tglob_ar6(SCE, start_date, ye)
-    else:
-        print('Option TEMP: ' + nl.TEMP + ' is not supported')
-    
+        
+    TGLOB = misc.make_tglob_array(ROOT, nl.TEMP, SCE, start_date, ye , nl.LowPass)
     TGLOBs = TGLOB.sel(time=slice(ys,None))
 
     # Compute the temperature anomalies for each process using a different 
@@ -572,11 +552,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             
         elif nl.ANT_DYN == 'LEV14':
             UnifDd = np.random.uniform(0, 1, N)
-            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
+            X_ant  = ant.ant_dyn_larmip(SCE, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
                                         files, 'LARMIP', True, nl.LowPass)
         elif nl.ANT_DYN == 'LEV20':
             UnifDd = np.random.uniform(0, 1, N)
-            X_ant  = ant.ant_dyn_larmip(SCE, MOD, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
+            X_ant  = ant.ant_dyn_larmip(SCE, ys, ye, nl.GAM, NormD, UnifDd, ROOT, 
                                         files, 'LARMIP2', True, nl.LowPass)
             
         elif nl.ANT_DYN == 'SROCC':

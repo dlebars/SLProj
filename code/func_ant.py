@@ -180,8 +180,8 @@ def read_larmip2_lrf(data_dir, basal_melt):
     
     return RF.RF
 
-def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir, 
-                   temp_files, larmip_v, delay, LowPass):
+def ant_dyn_larmip(SCE, start_date2, ye, GAM, NormD, UnifDd, data_dir, 
+                   temp_opt, larmip_v, delay, LowPass):
     '''Compute the antarctic dynamics contribution to global sea level as in 
     Levermann et al 2014, using linear response functions.'''
 
@@ -189,7 +189,6 @@ def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir,
                        # UnifDd and the LRF model. Only implemented for the 
                        # three LARMIP ice sheet models with ice shelves
 
-    nb_MOD = len(MOD)
     N = len(NormD)
     start_date = 1861 # This is different from other runs
     Beta_low = 7 # Bounds to use for the basal melt rate,
@@ -223,7 +222,7 @@ def ant_dyn_larmip(SCE, MOD, start_date2, ye, GAM, NormD, UnifDd, data_dir,
         
     nb_bass = len(RF.region)
 
-    TGLOB = misc.tglob_cmip5(temp_files, SCE, start_date, ye, LowPass, False)    
+    TGLOB = misc.make_tglob_array(data_dir, temp_opt, SCE, start_date, ye , LowPass)
     TGLOBs = TGLOB.sel(time=slice(start_date,None))
     Tref_Lev = TGLOBs - TGLOB.sel(time=slice(start_date,start_date+19)).mean(dim='time')
     Td_Lev = misc.normal_distrib(Tref_Lev, GAM, NormD)

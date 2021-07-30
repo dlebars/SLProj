@@ -10,8 +10,19 @@ import pandas as pd
 import xarray as xr
 from numpy.polynomial import Polynomial as P
 
-def temp_path_AR5(MOD, DIR_T, SCE):
+def model_selection_ar5():
+    'List of CMIP5 models used in AR5 sea level projections'
+    
+    MOD = ["ACCESS1-0","BCC-CSM1-1","CanESM2","CNRM-CM5","CSIRO-Mk3-6-0","GFDL-ESM2G",
+        "GFDL-ESM2M","GISS-E2-R","HadGEM2-CC","HadGEM2-ES","inmcm4","IPSL-CM5A-LR",
+        "IPSL-CM5A-MR","MIROC5","MIROC-ESM-CHEM","MIROC-ESM","MPI-ESM-LR","MPI-ESM-MR",
+        "MRI-CGCM3","NorESM1-ME","NorESM1-M"]
+    
+    return MOD
+
+def temp_path_AR5(DIR_T, SCE):
     files     = []
+    MOD = model_selection_ar5()
     nb_MOD_AR5 = len(MOD)
     for m in range(0, nb_MOD_AR5-1):
         if MOD[m] == 'BCC-CSM1-1':
@@ -114,21 +125,27 @@ def select_tglob_cmip6_files(data_dir, sce, verbose=False):
     
     return df
 
-def tglob_cmip(data_dir, mip, sce, start_date, ye, LowPass=False):
+def tglob_cmip(data_dir, temp_opt, sce, start_date, ye, LowPass=False):
     '''Read the text files of monthly temperature for each CMIP5 model and store
     yearly averged values in an xarray DataArray.
     Output data is in degree Kelvin'''
     
     nb_y = ye-start_date+1
     
-    if mip=='CMIP5':
-        path = f'{data_dir}global_tas_Amon_*_{sce}_r1i1p1.dat'
-        files = glob.glob(path)   
+    if temp_opt in['CMIP5', 'AR5']:
+        temp_data_dir = f'{data_dir}Data_AR5/Tglobal/'
+        if temp_opt=='CMIP5':
+            path = f'{temp_data_dir}global_tas_Amon_*_{sce}_r1i1p1.dat'
+            files = glob.glob(path)
+        elif temp_opt=='AR5':
+            files = temp_path_AR5(temp_data_dir, sce)
+            
         model_names = [f[86:-17] for f in files]
         df = pd.DataFrame({'clean_model_names': model_names, 'file_names': files})
         
-    elif mip=='CMIP6':
-        df = select_tglob_cmip6_files(data_dir, sce)
+    elif temp_opt=='CMIP6':
+        temp_data_dir = f'{data_dir}Data_cmip6/tas_global_averaged_climate_explorer/'
+        df = select_tglob_cmip6_files(temp_data_dir, sce)
         
     else:
         print(f'ERROR: Value of TEMP: {mip} not recognized')
@@ -159,6 +176,8 @@ def tglob_cmip(data_dir, mip, sce, start_date, ye, LowPass=False):
                 coords=[np.arange(start_date,ye+1)], name='time' )
         fit_coeff = TGLOB.polyfit('time', 2)
         TGLOB = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients) 
+
+    TGLOB.name = 'GSAT'
     
     return TGLOB
 
@@ -216,6 +235,19 @@ def tglob_ar6(sce, start_date, ye):
     ds = xr.DataArray(paths, coords=[np.arange(N), years] , dims=['model', 'time'])
     
     return ds
+
+def make_tglob_array(ROOT, temp_opt, SCE, start_date, ye , LowPass):
+    '''Depending on the namelist TEMP variable call the right function to 
+    define the TGLOB array'''
+    
+    if temp_opt in ['AR5', 'CMIP5', 'CMIP6']:
+        TGLOB = tglob_cmip( ROOT, temp_opt, SCE, start_date, ye , LowPass)
+    elif temp_opt == 'AR6':
+        TGLOB = tglob_ar6(SCE, start_date, ye)
+    else:
+        print('Option TEMP: ' + temp_opt + ' is not supported')
+        
+    return TGLOB
 
 def normal_distrib(model_ts, GAM, NormD):
     '''Build a normal distribution for a contributor'''
