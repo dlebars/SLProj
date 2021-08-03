@@ -6,6 +6,7 @@
 # LastYear: Last year of the computation 2100 or 2125.
 # LOC: If local give the coordinates [lat_N, lat_S, lon_W, lon_E] used for ocean
 # dynamics averaging otherwise False for global sea level projections.
+# Original box from KNMI14: 51-60N, -3.5,7.5E
 # For local projections the fingerprint location is also used:
 # LOC_FP = [lat, lon] (Point where the fingerprints are read)
 # IBarE: If True, include the inverse barometer effect, only used for local 

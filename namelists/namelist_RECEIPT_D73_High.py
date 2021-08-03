@@ -1,6 +1,5 @@
 INFO = True
-LastYear = 2125 # Last year of the computation 2100 or 2125.
-# Original box from Hylke: 51-60N, -3.5,7.5E
+LastYear = 2125
 LOC = False
 LOC_FP = False
 IBarE = False
