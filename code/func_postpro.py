@@ -22,3 +22,18 @@ def read_knmi14(add_subsidence=False):
             KNMI14_df[i + '_sub'] = KNMI14_df[i] + subsidence
         
     return KNMI14_df
+
+def define_area(reg):
+    '''Provides box coordinates given a region name'''
+    
+    if reg == 'dutch_coast':
+        lon_min, lon_max = 3, 7
+        lat_min, lat_max = 51, 54
+    elif reg == 'north_sea':
+        lon_min, lon_max = -2, 9
+        lat_min, lat_max = 48, 60
+    elif reg == 'knmi14_reg':
+        lon_min, lon_max = -3.5, 7.5
+        lat_min, lat_max = 51, 60
+    
+    return lon_min, lon_max, lat_min, lat_max
