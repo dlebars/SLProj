@@ -90,6 +90,10 @@
 #          Default option: False
 # BiasCorr: There is a possibility to include a bias correction on the local ocean
 #           dynamics term
+# InterpBack: The reference period of the code is 1986-2005 (including 2005). 
+#          Data is usually provided from 2006 but can be interpolated back to the 
+#          middle of the reference period if this option is true. Then data starts 
+#          in 1995.
 ################################################################################
 Example of namelist file:
 INFO = True
@@ -116,3 +120,4 @@ NoU_Gl = False
 Decomp = False
 LowPass = False
 BiasCorr = False
+InterpBack = False

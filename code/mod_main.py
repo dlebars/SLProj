@@ -766,8 +766,25 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                         X_asmb_perc, X_landw_perc, X_ant_perc, X_gre_perc, 
                         X_ant_tot_perc, X_tot_perc])
     
-    perc_da = xr.DataArray(perc_ar, coords=[ProcessNames, Perc, TIME2], \
+    perc_da = xr.DataArray(perc_ar, coords=[ProcessNames, Perc, TIME2],
                            dims=['proc', 'percentiles', 'time'])
+    
+    if nl.InterpBack:
+        #Assume 0 values in 1995, the middle of the reference period and 
+        #interpolate linearly between 1995 and 2006'''
+    
+        sel_slice = perc_da.isel(time=0).copy()
+        sel_slice.values = np.zeros(sel_slice.shape)
+        sel_slice['time'] = 1995
+        sel_slice
+    
+        perc_da_ext = xr.concat([sel_slice, perc_da], dim='time')
+
+        new_time = np.arange(perc_da_ext.time[0].values.item(),
+                             perc_da_ext.time[-1].values.item()+1)
+
+        perc_da = perc_da_ext.interp(time=new_time, method="linear")
+    
     perc_da.attrs['units'] = 'cm'
     perc_da.attrs['long_name'] = 'Time series of percentiles.'
     
