@@ -219,17 +219,17 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     nb_it = 0
     END = False
     
-    X_O_G_perc     = np.zeros([nb_perc,nb_y2])
-    X_O_A_perc     = np.zeros([nb_perc,nb_y2])
-    X_B_perc       = np.zeros([nb_perc,nb_y2])
-    X_gic_perc     = np.zeros([nb_perc,nb_y2])
-    X_gsmb_perc    = np.zeros([nb_perc,nb_y2])
-    X_asmb_perc    = np.zeros([nb_perc,nb_y2])
-    X_landw_perc   = np.zeros([nb_perc,nb_y2])
-    X_ant_perc     = np.zeros([nb_perc,nb_y2])
-    X_gre_perc     = np.zeros([nb_perc,nb_y2])
-    X_ant_tot_perc = np.zeros([nb_perc,nb_y2])
-    X_tot_perc     = np.zeros([nb_perc,nb_y2])
+    X_O_G_perc     = np.zeros([nb_perc+1,nb_y2])
+    X_O_A_perc     = np.zeros([nb_perc+1,nb_y2])
+    X_B_perc       = np.zeros([nb_perc+1,nb_y2])
+    X_gic_perc     = np.zeros([nb_perc+1,nb_y2])
+    X_gsmb_perc    = np.zeros([nb_perc+1,nb_y2])
+    X_asmb_perc    = np.zeros([nb_perc+1,nb_y2])
+    X_landw_perc   = np.zeros([nb_perc+1,nb_y2])
+    X_ant_perc     = np.zeros([nb_perc+1,nb_y2])
+    X_gre_perc     = np.zeros([nb_perc+1,nb_y2])
+    X_ant_tot_perc = np.zeros([nb_perc+1,nb_y2])
+    X_tot_perc     = np.zeros([nb_perc+1,nb_y2])
 
     if nl.SaveAllSamples:
         X_all       = np.zeros([nb_comp, N, nb_yd])
@@ -313,8 +313,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_Of = odyn.odyn_cmip(SCE_loc, ROOT, nl.LOC, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, nl.BiasCorr)
 
-        X_O_G_perc = X_O_G_perc + np.percentile(X_Of[1,:,:], Perc, axis=0)
-        X_O_A_perc = X_O_A_perc + np.percentile(X_Of[2,:,:], Perc, axis=0)
+        X_O_G_perc += np.concatenate( (np.percentile(X_Of[1,:,:], Perc, axis=0), 
+                                       X_Of[1,:,:].mean(axis=0, keepdims=True)), axis=0)
+        
+        X_O_A_perc += np.concatenate( (np.percentile(X_Of[2,:,:], Perc, axis=0), 
+                                       X_Of[2,:,:].mean(axis=0, keepdims=True)), axis=0)
         
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -367,8 +370,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         for t in range(0,nb_y2): # Use broadcasting?
             X_gic[:,t] = X_gic[:,t]*F_gic2[t]
-            
-        X_gic_perc = X_gic_perc + np.percentile(X_gic, Perc, axis=0)
+        
+        X_gic_perc += np.concatenate( (np.percentile(X_gic, Perc, axis=0), 
+                                       X_gic.mean(axis=0, keepdims=True)), axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -427,7 +431,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         for t in range(0, nb_y2):
             X_gsmb[:,t] = X_gsmb[:,t] * F_gsmb2[t]
         
-        X_gsmb_perc = X_gsmb_perc + np.percentile(X_gsmb, Perc, axis=0)
+        X_gsmb_perc += np.concatenate( (np.percentile(X_gsmb, Perc, axis=0), 
+                                        X_gsmb.mean(axis=0, keepdims=True)), axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -474,8 +479,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         for t in range(0, nb_y2):
             X_asmb[:,t] = X_asmb[:,t] * F_asmb2[t]
-
-        X_asmb_perc = X_asmb_perc + np.percentile(X_asmb, Perc, axis=0)
+        
+        X_asmb_perc += np.concatenate( (np.percentile(X_asmb, Perc, axis=0), 
+                                       X_asmb.mean(axis=0, keepdims=True)), axis=0)
     
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -503,8 +509,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         for t in range(0,nb_y2):
             X_landw[:,t] = X_landw[:,t]*F_gw2[t]
-
-        X_landw_perc = X_landw_perc + np.percentile(X_landw, Perc, axis=0)
+        
+        X_landw_perc += np.concatenate( (np.percentile(X_landw, Perc, axis=0), 
+                                       X_landw.mean(axis=0, keepdims=True)), axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -585,8 +592,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         for t in range(0, nb_y2):
             X_ant[:,t] = X_ant[:,t]*F_adyn2[t]
-
-        X_ant_perc = X_ant_perc + np.percentile(X_ant, Perc, axis=0)
+        
+        X_ant_perc += np.concatenate( (np.percentile(X_ant, Perc, axis=0), 
+                                       X_ant.mean(axis=0, keepdims=True)), axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -600,8 +608,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         else:
             X_tot     = X_tot + X_ant
             X_ant_tot = X_ant_tot + X_ant
-
-        X_ant_tot_perc = X_ant_tot_perc + np.percentile(X_ant_tot, Perc, axis=0)
+        
+        X_ant_tot_perc += np.concatenate( (np.percentile(X_ant_tot, Perc, axis=0), 
+                                       X_ant_tot.mean(axis=0, keepdims=True)), axis=0)
             
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_ant[:,ind_d]
@@ -645,8 +654,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Multiply by the fingerprint
         for t in range(0, nb_y2):
             X_gre[:,t] = X_gre[:,t]*F_gdyn2[t]
-
-        X_gre_perc = X_gre_perc + np.percentile(X_gre, Perc, axis=0)
+        
+        X_gre_perc += np.concatenate( (np.percentile(X_gre, Perc, axis=0), 
+                                       X_gre.mean(axis=0, keepdims=True)), axis=0)
 
         # Update X_tot, the sum of all contributions
         if nl.COMB == 'DEP':
@@ -670,8 +680,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
         # Tot = Thermal exp. and ocean dyn. + Glaciers and ice sheets + Greenland SMB +
         #       Antractic SMB + land water + antarctic dynamic + greenland dynamics
-
-        X_tot_perc = X_tot_perc + np.percentile(X_tot, Perc, axis=0)
+        
+        X_tot_perc += np.concatenate( (np.percentile(X_tot, Perc, axis=0), 
+                                       X_tot.mean(axis=0, keepdims=True)), axis=0)
 
         X_tot_perc_i = X_tot_perc/nb_it        
 
@@ -713,9 +724,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Check the convergence
         print('All precentiles:')
         print('Perc:')
-        print(X_tot_perc_i[:,-1])
+        print(X_tot_perc_i[:-1,-1])
         
-        CONV.append(X_tot_perc_i[-1,-1])
+        CONV.append(X_tot_perc_i[-2,-1])
         print(f'{Perc[-1]} percentile: ' + str(CONV[-1]))
         del(X_tot_perc_i)
 
@@ -766,7 +777,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                         X_asmb_perc, X_landw_perc, X_ant_perc, X_gre_perc, 
                         X_ant_tot_perc, X_tot_perc])
     
-    perc_da = xr.DataArray(perc_ar, coords=[ProcessNames, Perc, TIME2],
+    # Add mean to list of percentiles
+    Perc.append('mean')
+    
+    perc_da = xr.DataArray(perc_ar, 
+                           coords=[ProcessNames, Perc, TIME2],
                            dims=['proc', 'percentiles', 'time'])
     
     if nl.InterpBack:
@@ -797,6 +812,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         print('Not yet implemented')
         # Write PearsonCor and SpearmanCor out (MAT_OUTc2, MAT_OUTc2)
         # proc2 coordinate name
+        
     if nl.Decomp:
         X_Decomp_da = xr.DataArray(X_Decomp, 
                                    coords=[NameComponents[1:], Perc, TIME2[ind_d]], 
