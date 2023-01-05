@@ -55,7 +55,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers', \
                  'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
-                 'Greenland dynamics', 'sum anta.', 'Total']
+                 'Greenland dynamics', 'sum anta.', 'GIA','Total']
     
     # Percentiles to print at run time and store in outputs
     Perc = [1,5,10,17,20,50,80,83,90,95,99]
@@ -63,9 +63,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     if nl.SaveAllSamples:
         if nl.LOC:  # Number of components, used to compute correlations efficently.
-            NameComponents = ["Glob. temp.", "Glob. thermal exp.", "Local ocean", \
-                              "Barometer effect", "Glaciers", "Green. SMB", \
-                              "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
+            NameComponents = ["Glob. temp.", "Glob. thermal exp.", "Local ocean",
+                              "Barometer effect", "Glaciers", "Green. SMB",
+                              "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn.", ]
             print("!!! Warning: This combination of SaveAllSamples = \
             "+str(nl.SaveAllSamples)+ " and LOC:"+str(nl.LOC)+" hasn't been tested")
         else:
@@ -229,6 +229,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     X_ant_perc     = np.zeros([nb_perc+1,nb_y2])
     X_gre_perc     = np.zeros([nb_perc+1,nb_y2])
     X_ant_tot_perc = np.zeros([nb_perc+1,nb_y2])
+    X_gia_perc     = np.zeros([nb_perc+1,nb_y2])
     X_tot_perc     = np.zeros([nb_perc+1,nb_y2])
 
     if nl.SaveAllSamples:
@@ -672,14 +673,32 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_gre[:,ind_d]
             comp = comp + 1
+            
         del(X_gre)
-    
+        
+        ########################################################################
+        if nl.INFO:
+            print("### Glacial Isostatic Adjustment ##########################") 
+        
+        #!!! This process only works for the Dutch coast !!!
+        # Total subisdence from Deltares: 0.045
+        # GIA from ICE6G for 6 tide gauges: 0.037
+        
+        gia = (TIME2-1995) * 0.037 
+        X_gia = np.repeat(gia[np.newaxis, :], repeats=N, axis=0)
+                
+        X_gia_perc += np.concatenate( (np.percentile(X_gia, Perc, axis=0), 
+                                       X_gia.mean(axis=0, keepdims=True)), axis=0)
+        X_tot = X_tot + X_gia
+        
+        del(X_gia)
+        
         ########################################################################
         if nl.INFO:
             print("### Compute PDF of total SLR  #############################")
 
         # Tot = Thermal exp. and ocean dyn. + Glaciers and ice sheets + Greenland SMB +
-        #       Antractic SMB + land water + antarctic dynamic + greenland dynamics
+        #       Antractic SMB + land water + antarctic dynamic + greenland dynamics + glacial isostatic adjustment
         
         X_tot_perc += np.concatenate( (np.percentile(X_tot, Perc, axis=0), 
                                        X_tot.mean(axis=0, keepdims=True)), axis=0)
@@ -755,10 +774,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     X_ant_perc     = X_ant_perc/nb_it
     X_gre_perc     = X_gre_perc/nb_it
     X_ant_tot_perc = X_ant_tot_perc/nb_it
+    X_gia_perc     = X_gia_perc/nb_it
     X_tot_perc     = X_tot_perc/nb_it
+    
     if nl.Corr:
         M_Corr_P      = M_Corr_P/nb_it
         M_Corr_S      = M_Corr_S/nb_it
+        
     if nl.Decomp:
         X_Decomp      = X_Decomp/nb_it
 
@@ -775,7 +797,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
     perc_ar = np.array([X_O_G_perc, X_O_A_perc, X_B_perc, X_gic_perc, X_gsmb_perc, 
                         X_asmb_perc, X_landw_perc, X_ant_perc, X_gre_perc, 
-                        X_ant_tot_perc, X_tot_perc])
+                        X_ant_tot_perc, X_gia_perc, X_tot_perc])
     
     # Add mean to list of percentiles
     Perc.append('mean')
