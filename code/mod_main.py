@@ -203,7 +203,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
     # Compute the temperature anomalies for each process using a different 
     # reference temperature
-    T_gic = TGLOBs - TGLOB.sel(time=slice(1986,2005)).mean(dim='time') # Glaciers and Ice Caps
+    T_gic = TGLOBs - TGLOB.sel(time=2006) # Glaciers and Ice Caps
     T_g = TGLOBs - TGLOB.sel(time=slice(1980,1999)).mean(dim='time') # Greenland SMB
     T_a = TGLOBs - TGLOB.sel(time=slice(1985,2005)).mean(dim='time') # Antarctic SMB
     T_ad = TGLOBs - TGLOB.sel(time=2000) # Antarctic dynamics for DC16T
