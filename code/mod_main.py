@@ -45,7 +45,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             DIR_O       = ROOT + 'Data_AR5/Ocean/1x1_reg/'
             DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
         elif nl.ODYN == 'IPCC':
-            sys.exit('ERROR: This option of ocean dynamics can only be used for' + \
+            sys.exit('ERROR: This option of ocean dynamics can only be used for' +
                      ' global computations')
 
     else:
@@ -53,9 +53,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             DIR_OG      = ROOT + 'Data_AR5/Ocean/globalmeans_from_1x1_glob/'
 
     
-    ProcessNames = ['Global steric', 'Local ocean', 'Inverse barometer', 'Glaciers', \
-                 'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',\
-                 'Greenland dynamics', 'sum anta.', 'GIA','Total']
+    ProcessNames = ['Global steric', 'Ocean Dynamic Sea Level', 'Inverse barometer', 'Glaciers',
+                 'Greenland SMB', 'Antarctic SMB', 'Landwater', 'Antarctic dynamics',
+                 'Greenland dynamics', 'Greenland', 'Antarctica', 'GIA','Total']
     
     # Percentiles to print at run time and store in outputs
     Perc = [1,5,10,17,20,50,80,83,90,95,99]
@@ -63,14 +63,15 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     if nl.SaveAllSamples:
         if nl.LOC:  # Number of components, used to compute correlations efficently.
-            NameComponents = ["Glob. temp.", "Glob. thermal exp.", "Local ocean",
+            NameComponents = ["Glob. temp.", "Glob. thermal exp.", "ODSL",
                               "Barometer effect", "Glaciers", "Green. SMB",
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn.", ]
-            print("!!! Warning: This combination of SaveAllSamples = \
-            "+str(nl.SaveAllSamples)+ " and LOC:"+str(nl.LOC)+" hasn't been tested")
+            print("!!! Warning: This combination of SaveAllSamples ="+
+                  f" {nl.SaveAllSamples} and LOC= {nl.LOC} hasn't been tested")
         else:
-            NameComponents = ["Glob. temp.", "Thermal exp.", "Glaciers", "Green. SMB", \
+            NameComponents = ["Glob. temp.", "Thermal exp.", "Glaciers", "Green. SMB",
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
+            
         nb_comp = len(NameComponents)
     
     #List of model names
@@ -229,6 +230,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     X_ant_perc     = np.zeros([nb_perc+1,nb_y2])
     X_gre_perc     = np.zeros([nb_perc+1,nb_y2])
     X_ant_tot_perc = np.zeros([nb_perc+1,nb_y2])
+    X_gre_tot_perc = np.zeros([nb_perc+1,nb_y2])
     X_gia_perc     = np.zeros([nb_perc+1,nb_y2])
     X_tot_perc     = np.zeros([nb_perc+1,nb_y2])
 
@@ -445,6 +447,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_tot[:,t] = X_tot[:,t] + X_gsmb[:,t].mean()
         else:
             X_tot = X_tot + X_gsmb
+            X_gre_tot = X_gsmb
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_gsmb[:,ind_d]
@@ -669,12 +672,17 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_tot[:,t] = X_tot[:,t] + X_gre[:,t].mean()
         else:
             X_tot = X_tot + X_gre
+            X_gre_tot = X_gre_tot + X_gre
+        
+        X_gre_tot_perc += np.concatenate( (np.percentile(X_gre_tot, Perc, axis=0), 
+                                           X_gre_tot.mean(axis=0, keepdims=True)), axis=0)
 
         if nl.SaveAllSamples:
             X_all[comp,:,:] = X_gre[:,ind_d]
             comp = comp + 1
             
         del(X_gre)
+        del(X_gre_tot)
         
         ########################################################################
         if nl.INFO:
@@ -774,6 +782,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     X_ant_perc     = X_ant_perc/nb_it
     X_gre_perc     = X_gre_perc/nb_it
     X_ant_tot_perc = X_ant_tot_perc/nb_it
+    X_gre_tot_perc = X_gre_tot_perc/nb_it
     X_gia_perc     = X_gia_perc/nb_it
     X_tot_perc     = X_tot_perc/nb_it
     
@@ -797,7 +806,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
 
     perc_ar = np.array([X_O_G_perc, X_O_A_perc, X_B_perc, X_gic_perc, X_gsmb_perc, 
                         X_asmb_perc, X_landw_perc, X_ant_perc, X_gre_perc, 
-                        X_ant_tot_perc, X_gia_perc, X_tot_perc])
+                        X_gre_tot_perc, X_ant_tot_perc, X_gia_perc, X_tot_perc])
     
     # Add mean to list of percentiles
     Perc.append('mean')

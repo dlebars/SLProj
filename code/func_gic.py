@@ -14,6 +14,7 @@ def gic_ipcc(Td_gic, NormDs, ar):
         f = np.array([3.02,4.96,5.45,3.44])
         p = np.array([0.733,0.685,0.676,0.742])
         ref = 0.95 # Add 0.95 cm for the changes between 1996 to 2006
+        
     elif ar == 'AR6':
         # Values from AR6 table 9.A.4
         f    = np.array([3.7, 4.08, 5.5, 4.89, 4.26, 5.18, 2.66])
