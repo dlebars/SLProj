@@ -32,10 +32,12 @@
 #                   "KNMI" use data from KNMI14 scenarios. Can be used for both 
 #                   local and global but only for RCP4.5 and RCP.8.5. For global
 #                   "IPCC" option is preferable.
-#                   "CMIP5" uses data computed directly from the CMIP5 database.
+#                   "CMIP5" or "CMIP6" use data computed directly from the CMIP databases.
 #                   It can be used for both local and global computations. These 
 #                   input files should be computed before running the sea level 
 #                   projection.
+# ODSL_LIST: Option to select the models for ODSL
+# Possible choices: A list of models or False to use all models
 # ANT_DYN: Antarctic dynamics
 # Possible choices: "IPCC" for AR5 process based 
 #                   "KNMI14" as implemented by de Vries et al. 2014 for the KNMI'14 
@@ -104,6 +106,7 @@ IBarE = False
 TEMPf = 'AR5'
 GRE = 'IPCC'
 ODYN = 'KNMI'
+ODSL_LIST = False
 ANT_DYN = 'IPCC'
 GAM = 1
 COMB = 'IPCC'

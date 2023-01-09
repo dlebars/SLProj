@@ -70,7 +70,7 @@ def odyn_loc(SCE, MOD, DIR_O, DIR_OG, LOC, \
 
 
 def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
-    '''Compute thermal expansion contribution to global sea level from IPCC data.'''
+    '''Compute thermal expansion contribution to global sea level from IPCC AR5 data.'''
 
     X_O_med   = np.zeros(nb_y2-1) # In the files 2007 means the average over 2006
     X_O_up    = np.zeros(nb_y2-1)
@@ -96,7 +96,7 @@ def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     X_O_out[2,:,:] = 0     # and anomaly is 0
     return X_O_out
 
-def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, BiasCorr):
+def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, BiasCorr, ODSL_LIST):
     '''Read the CMIP5 and CMIP6 global steric and ocean dynamics contribution
     and compute a probability distribution.'''
     
@@ -119,6 +119,16 @@ def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, Bi
         # There are more models available for zos than for zostoga
         # Here we select the intersection
         model_list = list(set(full_sd_da.model.values) & set(MAT_G.model.values))
+        
+        if ODSL_LIST:
+            # Select a list of models chosen in the namelist
+            print("### Sub-selecting models")
+            print("Before selection:")
+            print(model_list)
+            model_list = list(set(model_list) & set(ODSL_LIST))
+            print("After selection")
+            print(model_list)
+        
         MAT_A = full_sd_da.sel(model=model_list).mean(dim=['lat', 'lon'])
         
         if BiasCorr:
