@@ -300,8 +300,8 @@ def proj2order_normal(TIME_loc, a1_up, a1_lo, Delta_mean_2100, Delta_std_2100, N
 
     return X_out
 
-def proj2order_normal_assym(TIME_loc, a1_up, a1_lo, med_2100, 
-                            std_lo_2100, std_up_2100, NormD):
+def proj2order_normal_assym_ks21(TIME_loc, a1_up, a1_lo, med_2100, 
+                                 std_lo_2100, std_up_2100, NormD):
     '''Project future values of sea level using present day uncertainty range of 
     the contribution in cm/year and uncertainty of total contribution in 2100 
     in cm. The uncertainty is represented by a two half-normal distributions,

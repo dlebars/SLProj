@@ -52,8 +52,9 @@
 #                   is all attributed to SMB and dynamics is 0 in this case.
 #                   "SROCC"  IPCC SROCC report, only defined for RCP8.5. For other 
 #                            scenarios SROCC is similar to AR5
-#                   "AR6": Uses the numbers from IPCC AR6 (with half-normal distribution 
+#                   "KS21": Uses the numbers from IPCC AR6 (with half-normal distribution 
 #                   assumption). Also defined for ssp585_hpp.
+#                   "KNMI23": Similar to KS21 but with a slower increase of the uncertainty
 # GIC: Glaciers and ice caps
 # Possible choices: "AR5" or "AR6"
 # GAM: Uncertainty of climate models

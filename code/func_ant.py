@@ -272,7 +272,7 @@ def ant_dyn_larmip(SCE, start_date2, ye, GAM, NormD, UnifDd, data_dir,
     
     return X_ant[:,i_ys:]
 
-def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD):
+def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD, ANT_DYN):
     '''Total antarctic contribution as in AR6 table 9.9.
     Compute a discontinuous two sided half-normal distribution from the likely range.
     These numbers in 2100 are referenced to the period 1995-2014
@@ -293,7 +293,11 @@ def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD):
     std_lo_2100 = l_range[1]-l_range[0]
     std_up_2100 = l_range[2]-l_range[1]
     
-    X_ant = misc.proj2order_normal_assym(TIME_loc, a1_up, a1_lo, l_range[1], 
-                                         std_lo_2100, std_up_2100, NormD)
+    if ANT_DYN == 'KS21':
+        X_ant = misc.proj2order_normal_assym_ks21(
+            TIME_loc, a1_up, a1_lo, l_range[1], std_lo_2100, std_up_2100, NormD)
+    elif ANT_DYN == 'KNMI23':
+        X_ant = misc.proj2order_normal_assym_knmi23(
+            TIME_loc, a1_up, a1_lo, l_range[1], std_lo_2100, std_up_2100, NormD)
     
     return X_ant
