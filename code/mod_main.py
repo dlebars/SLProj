@@ -594,7 +594,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             NormDA  = np.random.normal(0, 1, N)
             X_ant = ant.ant_ar6(TIME2, a1_up_a, a1_lo_a, SCE, NormDA, nl.ANT_DYN)
         
-        X_ant = X_ant + 0.25 # Add 0.25cm, the conribution from 1995 to 2005
+        # Add the conribution from 1995 to 2005
+        if nl.ANT_DYN == 'KNMI23':
+            X_ant = X_ant + 0.17 # From Frederikse et al. 2020
+        else:
+            X_ant = X_ant + 0.25 # From AR5
 
         for t in range(0, nb_y2):
             X_ant[:,t] = X_ant[:,t]*F_adyn2[t]
