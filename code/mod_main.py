@@ -817,17 +817,18 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     # Add mean to list of percentiles
     Perc.append('mean')
     
+    # Store data into a DataArray and add 0.5 to the years
     perc_da = xr.DataArray(perc_ar, 
-                           coords=[ProcessNames, Perc, TIME2],
+                           coords=[ProcessNames, Perc, TIME2+0.5],
                            dims=['proc', 'percentiles', 'time'])
     
     if nl.InterpBack:
-        #Assume 0 values in 1995, the middle of the reference period and 
-        #interpolate linearly between 1995 and 2006'''
+        #Assume 0 values in 1995.5, the middle of the reference period and 
+        #interpolate linearly between 1995.5 and 2006.5'''
     
         sel_slice = perc_da.isel(time=0).copy()
         sel_slice.values = np.zeros(sel_slice.shape)
-        sel_slice['time'] = 1995
+        sel_slice['time'] = 1995.5
         sel_slice
     
         perc_da_ext = xr.concat([sel_slice, perc_da], dim='time')
@@ -859,28 +860,29 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                                           'components')
         OUT_ds['decomp'] = X_Decomp_da
     
-    OUT_ds.attrs['options'] = \
-    "Computations were done with the following options:: " + \
-    "Local computations?" + str(nl.LOC) + \
-    ", include Inverse Barometer effect: "+ str(nl.IBarE) + \
-    ", GMST option: "+ nl.TEMP + \
-    ", Greenland SMB and dynamics is: "+ nl.GRE + \
-    ", Ocean dynamics is: " + nl.ODYN + \
-    ", Antarctic dynamics is: " + nl.ANT_DYN + \
-    ", Gamma is: " + str(nl.GAM)+ \
-    ", combination of processes: " + nl.COMB + \
-    ", save all samples: " + str(nl.SaveAllSamples) + \
-    ", compute correlation between processes: " + str(nl.Corr) + \
-    ", correlation between GMST and thermal expansion is: "+ str(nl.CorrGT) + \
-    ", measure of correlation between GMST and thermal expansion is:"+ nl.CorrM + \
-    ", correlation between surface mass balances: "+ str(nl.CorrSMB) + \
-    ", correlation between ice sheet dynamics: "+ str(nl.CorrDYN) + \
-    ", remove ocean dynamics uncertainty: "+ str(nl.NoU_O) + \
-    ", remove greenland uncertainty: "+ str(nl.NoU_G) + \
-    ", remove Antarctic uncertainty: "+ str(nl.NoU_A) + \
-    ", remove glaciers and ice caps uncertainty: "+ str(nl.NoU_Gl) + \
-    ", decompose the total sea level into its contributors: "+ str(nl.Decomp) + \
-    ", filter stero-dynamics and GMST with a polynomial fit: "+ str(nl.LowPass)
+    OUT_ds.attrs['options'] = (
+    "Computations were done with the following options:: " +
+    f"Local computations? {nl.LOC}" +
+    f", include Inverse Barometer effect: {nl.IBarE}" +
+    f", GMST option: {nl.TEMP}" +
+    f", Greenland SMB and dynamics is: {nl.GRE}" +
+    f", Ocean dynamics is: {nl.ODYN}" +
+    f", Antarctic dynamics is: {nl.ANT_DYN}" +
+    f", Gamma is: {nl.GAM}" +
+    f", combination of processes: {nl.COMB}" +
+    f", save all samples: {nl.SaveAllSamples}" +
+    f", compute correlation between processes: {nl.Corr}" +
+    f", correlation between GMST and thermal expansion is: {nl.CorrGT}" +
+    f", measure of correlation between GMST and thermal expansion is: {nl.CorrM}" +
+    f", correlation between surface mass balances: {nl.CorrSMB}" +
+    f", correlation between ice sheet dynamics: {nl.CorrDYN}" +
+    f", remove ocean dynamics uncertainty: {nl.NoU_O}" +
+    f", remove greenland uncertainty: {nl.NoU_G}" +
+    f", remove Antarctic uncertainty: {nl.NoU_A}" +
+    f", remove glaciers and ice caps uncertainty: {nl.NoU_Gl}" +
+    f", decompose the total sea level into its contributors: {nl.Decomp}" +
+    f", filter stero-dynamics and GMST with a polynomial fit: {nl.LowPass}" +
+    f", interpolate backward to 1995: {nl.InterpBack}")
     
     OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
     'Probabilistic Sea Level Projection code version ' + str(VER)
