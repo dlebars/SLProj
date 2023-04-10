@@ -5,6 +5,7 @@
 import numpy as np
 import xarray as xr
 from scipy.stats import norm
+import regionmask
 
 import func_misc as misc
 
@@ -94,6 +95,7 @@ def odyn_glob_ipcc(SCE, DIR_IPCC, N, nb_y2, Gam, NormD):
     X_O_out[0,:,:] = X_O
     X_O_out[1,:,:] = X_O   # In this case global is the same as total
     X_O_out[2,:,:] = 0     # and anomaly is 0
+    
     return X_O_out
 
 def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, BiasCorr, ODSL_LIST):
@@ -104,44 +106,72 @@ def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, Bi
     
     # Read global steric
     full_st_da = misc.read_zostoga_ds(data_dir, SCE)
+    
     # Convert from m to cm
     MAT_G = full_st_da['zostoga_corrected'].sel(time=slice(ref_steric[0],ye))*100
     
-    if LOC:
-        lat_N, lat_S, lon_W, lon_E = LOC
+    if not(LOC):
+        MAT = MAT_G
+        MAT_A = xr.zeros_like(MAT_G)
+        
+    else:
+        if len(LOC) == 4:
+            # The region is a box
+            lat_N, lat_S, lon_W, lon_E = LOC
 
-        zos_ds = misc.read_zos_ds(data_dir, SCE)
+            zos_ds = misc.read_zos_ds(data_dir, SCE)
+
+            full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(
+                time=slice(ref_steric[0],ye), 
+                lat=slice(lat_S,lat_N), 
+                lon=slice(lon_W,lon_E))
+
+            full_sd_da = full_sd_da.mean(dim=['lat', 'lon'])
+
+        elif len(LOC) > 4:
+            # The region is a polygon
+            zos_ds = misc.read_zos_ds(data_dir, SCE)
+            full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(
+                time=slice(ref_steric[0],ye))
+    
+            region = regionmask.Regions([LOC], names=['Reg'], abbrevs=['Reg'])
+    
+            # Define the mask and change its value from 0 to 1
+            mask_cmip = region.mask_3D(full_sd_da.lon, full_sd_da.lat)
+
+            weights = np.cos(np.deg2rad(full_sd_da.lat))
+
+            full_sd_da = full_sd_da.weighted(mask_cmip * weights).mean(dim=('lat', 'lon'))
+            full_sd_da = full_sd_da.sel(region=0)
             
-        full_sd_da = zos_ds['CorrectedReggrided_zos'].sel(time=slice(ref_steric[0],ye), 
-                                lat=slice(lat_S,lat_N), 
-                                lon=slice(lon_W,lon_E))
-
         # There are more models available for zos than for zostoga
         # Here we select the intersection
-        model_list = list(set(full_sd_da.model.values) & set(MAT_G.model.values))
+        #model_list = list(set(full_sd_da.model.values) & set(MAT_G.model.values))
         
         if ODSL_LIST:
             # Select a list of models chosen in the namelist
             print("### Sub-selecting models")
             print("Before selection:")
+            model_list = full_sd_da.model.values
             print(model_list)
             model_list = list(set(model_list) & set(ODSL_LIST))
             print("After selection")
             print(model_list)
         
-        MAT_A = full_sd_da.sel(model=model_list).mean(dim=['lat', 'lon'])
+        MAT_A = full_sd_da.sel(model=model_list)
         
         if BiasCorr:
             # Use a bias correction based on the comparison of model and 
             # observations between 1979 and 2018
             MAT_A = MAT_A*BiasCorr
         
+        # This sum of dara arrays selects the intersection of models between 
+        # MAT_A and MAT_G
         MAT = MAT_A + MAT_G
         
-    else:
-        MAT = MAT_G
-        MAT_A = xr.zeros_like(MAT_G)
-    
+        print("Final list of models used:")
+        print(MAT.model.values)
+
     if LowPass:
         new_time = xr.DataArray( np.arange(ys,ye+1)+0.5, dims='time', 
                         coords=[np.arange(ys,ye+1)+0.5], name='time' )
