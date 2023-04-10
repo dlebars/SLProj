@@ -29,7 +29,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     """
     
     print('#### Starting a new computation ##################################')
-    print(f'Using namelist_{namelist_name}')
+    print(f'Using namelist_{namelist_name} and scenario {SCE}')
     nl = importlib.import_module(f'namelist_{namelist_name}')
 
     ROOT = '/Users/dewilebars/Projects/Project_ProbSLR/Data_Proj/'
