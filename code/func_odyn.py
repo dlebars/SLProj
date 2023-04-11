@@ -143,10 +143,6 @@ def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, Bi
 
             full_sd_da = full_sd_da.weighted(mask_cmip * weights).mean(dim=('lat', 'lon'))
             full_sd_da = full_sd_da.sel(region=0)
-            
-        # There are more models available for zos than for zostoga
-        # Here we select the intersection
-        #model_list = list(set(full_sd_da.model.values) & set(MAT_G.model.values))
         
         if ODSL_LIST:
             # Select a list of models chosen in the namelist
@@ -173,11 +169,11 @@ def odyn_cmip(SCE, data_dir, LOC, ref_steric, ye, N, ys, Gam, NormD, LowPass, Bi
         print(MAT.model.values)
 
     if LowPass:
-        new_time = xr.DataArray( np.arange(ys,ye+1)+0.5, dims='time', 
-                        coords=[np.arange(ys,ye+1)+0.5], name='time' )
-        fit_coeff = MAT.polyfit('time', 2)
+        new_time = xr.DataArray( np.arange(ref_steric[0],ye+1)+0.5, dims='time', 
+                        coords=[np.arange(ref_steric[0],ye+1)+0.5], name='time' )
+        fit_coeff = MAT.polyfit('time', LowPass)
         MAT = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients)       
-        fit_coeff = MAT_G.polyfit('time', 2)
+        fit_coeff = MAT_G.polyfit('time', LowPass)
         MAT_G = xr.polyval(coord=new_time, coeffs=fit_coeff.polyfit_coefficients)
         MAT_A = MAT - MAT_G
     

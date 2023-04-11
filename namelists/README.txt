@@ -4,8 +4,9 @@
 # Description of variables:
 # INFO: Set to true to get more info in output
 # LastYear: Last year of the computation 2100 or 2125.
-# LOC: If local give the coordinates [lat_N, lat_S, lon_W, lon_E] used for ocean
-# dynamics averaging otherwise False for global sea level projections.
+# LOC: If local give either the box coordinates [lat_N, lat_S, lon_W, lon_E] or
+# a polygon that will be used with regionmask for ocean
+# dynamics averaging. Otherwise False for global sea level projections.
 # Original box from KNMI14: 51-60N, -3.5,7.5E
 # For local projections the fingerprint location is also used:
 # LOC_FP = [lat, lon] (Point where the fingerprints are read)
@@ -88,8 +89,8 @@
 # NoU_Gl: If True, remove Glacier and ice caps uncertainty
 # Decomp: Save the decomposition of each total sea level value into the average 
 #         components that form it. SaveAllSamples needs to be true.
-# LowPass: If true filter the time series of stero-dynamics and GMST with a 
-#          second order polynomial fit.
+# LowPass: If integer then filter the time series of stero-dynamics and GMST with a 
+#          polynomial fit of the order of the integre provided.
 #          Default option: False
 # BiasCorr: There is a possibility to include a bias correction on the local ocean
 #           dynamics term
