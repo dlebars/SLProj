@@ -29,6 +29,5 @@ NoU_A = False
 NoU_Gl = False
 Decomp = False
 LowPass = 3
-# Assume wind trend over the last 30 years is natural variability
-BiasCorr = False #0.4 #0.5
+BiasCorr = False
 InterpBack = True
