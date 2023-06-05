@@ -301,3 +301,31 @@ def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD, ANT_DYN):
             TIME_loc, a1_up, a1_lo, l_range[1], std_lo_2100, std_up_2100, NormD)
     
     return X_ant
+
+def ant_dyn_vdl23(ROOT, SCE, N):
+    # Use projections from van der Linden et al. 2023
+    
+    path_vdl = f"{ROOT}/DataAntarctica_vdl/"
+
+    vdl_ds = xr.open_dataset(f"{path_vdl}slr_AMUNcalibrated_quadM_thetao_merged_biasadj_shelfbasedepth_historical+{SCE}_1850-2100.nc")
+    vdl_ds = vdl_ds.rename_vars({"__xarray_dataarray_variable__":"AA_dyn"})
+
+    vdl_da = vdl_ds.AA_dyn.sel(region = "SU")
+    
+    # Convert from m to cm
+    vdl_da = vdl_da*100
+    
+    # For one model values in 2100 are 0
+    vdl_da.loc[:,'CAMS-CSM1-0', 2100] = vdl_da.loc[:,'CAMS-CSM1-0', 2099]
+    vdl_da = vdl_da.stack(model_pairs=['model', 'ism'])
+    vdl_da = vdl_da.dropna(dim="model_pairs")
+    # Take the correct reference period
+    vdl_da = vdl_da - vdl_da.sel(year=slice(1986,2005)).mean(dim="year")
+    vdl_da = vdl_da.sel(year=slice(2006,2100))
+    vdl_na = np.swapaxes(vdl_da.data, 0, 1)
+    
+    modelsel = np.random.randint(0, len(vdl_da.model_pairs), N)
+
+    vdl_na_big = vdl_na[modelsel, :]
+    
+    return vdl_na_big

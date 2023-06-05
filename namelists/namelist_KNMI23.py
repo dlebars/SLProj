@@ -13,7 +13,7 @@ ODYN = 'CMIP6'
 ODSL_LIST = ['ACCESS-ESM1-5', 'CESM2-WACCM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 
              'EC-Earth3', 'GISS-E2-1-G', 'INM-CM4-8', 'MIROC-ES2L', 
              'MPI-ESM1-2-LR', 'NESM3', 'NorESM2-LM', 'NorESM2-MM', 'UKESM1-0-LL']
-ANT_DYN = 'KNMI23'
+ANT_DYN = 'VDL23'
 GIC = 'AR6'
 GAM = 1
 COMB = 'IPCC'

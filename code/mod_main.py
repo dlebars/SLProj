@@ -465,7 +465,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             # Redefine NormD to loose correlation
             NormD  = np.random.normal(0, 1, N)
 
-        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'LEV20', 'SROCC']:
+        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'LEV20', 'SROCC', 'VDL23']:
             # Build the distribution of global temperature for this contributor
             Td_a = misc.normal_distrib(T_a, nl.GAM, NormD)
 
@@ -593,10 +593,16 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             # Redefine an independent normal distribution
             NormDA  = np.random.normal(0, 1, N)
             X_ant = ant.ant_ar6(TIME2, a1_up_a, a1_lo_a, SCE, NormDA, nl.ANT_DYN)
+            
+        elif nl.ANT_DYN == 'VDL23':
+            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N)
         
         # Add the conribution from 1995 to 2005
         if nl.ANT_DYN == 'KNMI23':
             X_ant = X_ant + 0.17 # From Frederikse et al. 2020
+        elif nl.ANT_DYN == 'VDL23':
+            # No need to add anything, reference period is already good
+            X_ant = X_ant
         else:
             X_ant = X_ant + 0.25 # From AR5
 
