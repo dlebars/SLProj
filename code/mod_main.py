@@ -835,7 +835,6 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         sel_slice = perc_da.isel(time=0).copy()
         sel_slice.values = np.zeros(sel_slice.shape)
         sel_slice['time'] = 1995.5
-        sel_slice
     
         perc_da_ext = xr.concat([sel_slice, perc_da], dim='time')
 
