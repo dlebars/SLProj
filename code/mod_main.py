@@ -597,12 +597,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         elif nl.ANT_DYN == 'VDL23':
             X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N)
         
-        # Add the conribution from 1995 to 2005
-        if nl.ANT_DYN == 'KNMI23':
+        # Add the conribution from 1995 to 2006
+        if nl.ANT_DYN in ['KNMI23','VDL23']:
             X_ant = X_ant + 0.17 # From Frederikse et al. 2020
-        elif nl.ANT_DYN == 'VDL23':
-            # No need to add anything, reference period is already good
-            X_ant = X_ant
         else:
             X_ant = X_ant + 0.25 # From AR5
 
