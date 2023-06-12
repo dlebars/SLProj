@@ -302,12 +302,12 @@ def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD, ANT_DYN):
     
     return X_ant
 
-def ant_dyn_vdl23(ROOT, SCE, N, select_best=False):
+def ant_dyn_vdl23(ROOT, SCE, N, cal_reg, select_best=False):
     # Use projections from van der Linden et al. 2023
     
     path_vdl = f"{ROOT}/DataAntarctica_vdl/"
 
-    vdl_ds = xr.open_dataset(f"{path_vdl}slr_AMUNcalibrated_quadM_thetao_merged_biasadj_shelfbasedepth_historical+{SCE}_1850-2100.nc")
+    vdl_ds = xr.open_dataset(f"{path_vdl}slr_{cal_reg}calibrated_quadM_thetao_merged_biasadj_shelfbasedepth_historical+{SCE}_1850-2100.nc")
     vdl_ds = vdl_ds.rename_vars({"__xarray_dataarray_variable__":"AA_dyn"})
 
     vdl_da = vdl_ds.AA_dyn.sel(region = "SU")
@@ -321,7 +321,8 @@ def ant_dyn_vdl23(ROOT, SCE, N, select_best=False):
 
     if select_best:
         # Select the best 10% of model pairs
-        aa_t10 = pd.read_csv(f"{path_vdl}/top10pct_models_AMUNcalibrated_quadM_shelfbasedepth.txt", 
+        # Only works for Amundsen Sea calibration
+        aa_t10 = pd.read_csv(f"{path_vdl}/top10pct_models_{cal_reg}calibrated_quadM_shelfbasedepth.txt", 
                              names = ["ESM", "ISM"],
                              delim_whitespace=True)
         na = np.transpose(np.array(aa_t10))
@@ -330,17 +331,23 @@ def ant_dyn_vdl23(ROOT, SCE, N, select_best=False):
     
     vdl_da = vdl_da.dropna(dim="model_pairs")
 
-    # Take a later reference period
-    vdl_da = vdl_da - vdl_da.sel(year=slice(2008,2028)).mean(dim="year")
-    vdl_da = vdl_da.sel(year=slice(2006,2100))
+    if cal_reg == 'SU':
+        # Use the usual reference period
+        vdl_da = vdl_da - vdl_da.sel(year=slice(1986,2005)).mean(dim="year")
+        vdl_da = vdl_da.sel(year=slice(2006,2100))
+        
+    elif cal_reg == 'AMUN':
+        # Take a later reference period
+        vdl_da = vdl_da - vdl_da.sel(year=slice(2008,2028)).mean(dim="year")
+        vdl_da = vdl_da.sel(year=slice(2006,2100))
     
-    # Add Antarctic contribution from 2006 to 2018 based on Frederikse et al. 2020
-    obs = 0.62
-    vdl_da = vdl_da + obs
+        # Add Antarctic contribution from 1995 to 2018 based on Frederikse et al. 2020
+        obs = 0.79
+        vdl_da = vdl_da + obs
     
-    # Reconstruct values back to 2006
-    lin_ar = np.linspace(0, obs, 13)
-    vdl_da.loc[2006:2018] =  lin_ar[:,np.newaxis]
+        # Reconstruct values back to 2006
+        lin_ar = np.linspace(0, obs, 13)
+        vdl_da.loc[2006:2018] =  lin_ar[:,np.newaxis]
     
     vdl_na = np.swapaxes(vdl_da.data, 0, 1)
     modelsel = np.random.randint(0, len(vdl_da.model_pairs), N)

@@ -465,7 +465,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             # Redefine NormD to loose correlation
             NormD  = np.random.normal(0, 1, N)
 
-        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'LEV20', 'SROCC', 'VDL23']:
+        if nl.ANT_DYN in ['IPCC', 'KNMI14', 'KNMI16', 'LEV14', 'LEV20', 'SROCC', 'VDL23_AA', 'VDL23_AS']:
             # Build the distribution of global temperature for this contributor
             Td_a = misc.normal_distrib(T_a, nl.GAM, NormD)
 
@@ -602,12 +602,20 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             NormDA  = np.random.normal(0, 1, N)
             X_ant = ant.ant_ar6(TIME2, a1_up_a, a1_lo_a, SCE, NormDA, nl.ANT_DYN)
             
-        elif nl.ANT_DYN == 'VDL23':
-            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N)
+        elif nl.ANT_DYN == 'VDL23_AS':
+            cal_reg = 'AMUN'
+            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N, cal_reg)
+        
+        elif nl.ANT_DYN == 'VDL23_AA':
+            cal_reg = 'SU'
+            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N, cal_reg)
         
         # Add the conribution from 1995 to 2006
-        if nl.ANT_DYN in ['KNMI23','VDL23']:
+        if nl.ANT_DYN in ['KNMI23']:
             X_ant = X_ant + 0.17 # From Frederikse et al. 2020
+        elif nl.ANT_DYN in ['VDL23_AS', 'VDL23_AA']:
+            # Reference period already taken care of in ant_dyn_vdl23 function
+            X_ant = X_ant
         else:
             X_ant = X_ant + 0.25 # From AR5
 

@@ -56,7 +56,10 @@
 #                   "KS21": Uses the numbers from IPCC AR6 (with half-normal distribution 
 #                   assumption). Also defined for ssp585_hpp.
 #                   "KNMI23": Similar to KS21 but with a slower increase of the uncertainty
-#                   "VDL23": Results from van Der Linden 2023
+#                   "VDL23_AA": Results from van der Linden et al. 2023. Full 
+#                               Antarctic calibration.
+#                   "VDL23_AS": Results from van der Linden et al. 2023. 
+#                               Amundsen Sea calibration.
 # GIC: Glaciers and ice caps
 # Possible choices: "AR5" or "AR6"
 # LWS: Land water storage
