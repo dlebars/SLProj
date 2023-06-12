@@ -511,7 +511,15 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.INFO:
             print("### Landwater changes ############################################")
 
-        X_landw = misc.landw_ar5(ys, TIME2, N)
+        if nl.LWS == 'AR5':
+            X_landw = misc.landw_ar5(ys, TIME2, N)
+            
+        elif nl.LWS == 'AR6':
+            UnifLWS = np.random.uniform(0, 1, N)
+            # Start with the same AR5 rates from 2006
+            # Also same assumption as AR5 that this process does not contribute
+            # before 2006.
+            X_landw = misc.proj2order(TIME2, 0.049, 0.026, 4, 1, UnifLWS)
 
         for t in range(0,nb_y2):
             X_landw[:,t] = X_landw[:,t]*F_gw2[t]

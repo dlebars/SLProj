@@ -59,6 +59,9 @@
 #                   "VDL23": Results from van Der Linden 2023
 # GIC: Glaciers and ice caps
 # Possible choices: "AR5" or "AR6"
+# LWS: Land water storage
+# Possible choices: "AR5" or "AR6". Remark: AR6 option is an approximation of 
+#                   the AR6 results based on a 2nd order polynomial.
 # GAM: Uncertainty of climate models
 # Possible choices: 1 for IPCC AR5
 #                   1.64 to convert the IPCC expert judgement that the 5-95 

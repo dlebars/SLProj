@@ -15,6 +15,7 @@ ODSL_LIST = ['ACCESS-ESM1-5', 'CESM2-WACCM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
              'MPI-ESM1-2-LR', 'NESM3', 'NorESM2-LM', 'NorESM2-MM', 'UKESM1-0-LL']
 ANT_DYN = 'VDL23'
 GIC = 'AR6'
+LWS = 'AR6'
 GAM = 1
 COMB = 'IPCC'
 SaveAllSamples = False
