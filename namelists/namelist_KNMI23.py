@@ -1,11 +1,6 @@
 INFO = True
-LastYear = 2100 # Last year of the computation 2100 or 2125.
-# Original box from Hylke: 51-60N, -3.5,7.5E
-#LOC = [60, 51, -3.5, 7.5] # lat_N, lat_S, lon_W, lon_E
-# Define a polygon for the Dutch coast
-LOC = [[2.5, 53], [3.3, 51.5], [4.25, 52.25], [4.75, 53.3], [5.5, 53.6], 
-       [7, 53.75], [7, 55], [4, 54.5]]
-LOC_FP = [53, 5] # lat, lon
+LastYear = 2100 # Last year of the computation 2100 or 2125
+REG = 'Netherlands'
 IBarE = False
 TEMP = 'AR6'
 GRE = 'IPCC'

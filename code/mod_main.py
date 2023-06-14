@@ -36,7 +36,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     DIR_IPCC = f'{ROOT}Data_AR5/Final_Projections/'
     DIR_OUT = '../outputs/'       # Output directory
     
-    if nl.LOC:
+    if nl.REG:
         DIR_F       = ROOT+'Data_AR5/Fingerprints/'
         DIR_IBE     = ROOT+'Data_AR5/InvertedBarometer/1x1_reg/'
         DIR_IBEmean = ROOT+'Data_AR5/InvertedBarometer/globalmeans_from_1x1_glob/'
@@ -47,6 +47,21 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         elif nl.ODYN == 'IPCC':
             sys.exit('ERROR: This option of ocean dynamics can only be used for' +
                      ' global computations')
+            
+        # Define the region used
+        # Region used to average the ODSL: ODSL_REG, can be either a box 
+        # [lat_N, lat_S, lon_W, lon_E] that is 
+        # selected with .sel option of xarray of a polygone that will be read with
+        # the regionmask package.
+        # Also define the location (latitude, longitude) where the fingerprints 
+        # are read. There is no spatial averaging possible for the fingerprints.
+        if nl.REG == 'Netherlands':
+            ODSL_REG = [[2.5, 53], [3.3, 51.5], [4.25, 52.25], [4.75, 53.3], 
+                        [5.5, 53.6], [7, 53.75], [7, 55], [4, 54.5]]
+            LOC_FP = [53, 5] 
+        elif nl.REG == 'KNMI14':
+            ODSL_REG = [60, 51, -3.5, 7.5]
+            LOC_FP = [53, 5]
 
     else:
         if nl.ODYN == 'KNMI':
@@ -62,12 +77,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     nb_perc = len(Perc)
     
     if nl.SaveAllSamples:
-        if nl.LOC:  # Number of components, used to compute correlations efficently.
+        if nl.REG:  # Number of components, used to compute correlations efficently.
             NameComponents = ["Glob. temp.", "Glob. thermal exp.", "ODSL",
                               "Barometer effect", "Glaciers", "Green. SMB",
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn.", ]
             print("!!! Warning: This combination of SaveAllSamples ="+
-                  f" {nl.SaveAllSamples} and LOC= {nl.LOC} hasn't been tested")
+                  f" {nl.SaveAllSamples} and regional projection hasn't been tested")
         else:
             NameComponents = ["Glob. temp.", "Thermal exp.", "Glaciers", "Green. SMB",
                               "Ant. SMB", "Land water", "Ant. dyn.", "Green dyn."]
@@ -118,7 +133,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     F_adyn2 = np.ones(nb_y2)
     F_gw2   = np.ones(nb_y2)
     
-    if nl.LOC:
+    if nl.REG:
         FPs    = 1986 # The fingerprints start in 1986 and end in 2100,
         FPe    = 2100 # but do not have a useful time vector so we create one here
         TIME_F = np.arange(FPs,FPe+1)
@@ -130,7 +145,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Read fingerprint for Glaciers and Ice Caps
         f_gic = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', \
                                      decode_times=False)
-        F_gic = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], f_gic.latitude, f_gic.longitude, 
+        F_gic = misc.finger1D(LOC_FP[0], LOC_FP[1], f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
         F_gic2[jfs:jfe+1] =  F_gic[ifs:ife+1]/100 # Convert from % to fraction
 
@@ -139,13 +154,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         f_ic        = xr.open_dataset(DIR_F+'Relative_icesheets_reg.nc')
         lat_ic      = f_ic.latitude #tofloat?
         lon_ic      = f_ic.longitude
-        F_gsmb      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_GRE)
+        F_gsmb      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_GRE)
         F_gsmb2[jfs:jfe+1]  =  F_gsmb/100
-        F_asmb      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_ANT)
+        F_asmb      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_ANT)
         F_asmb2[jfs:jfe+1]  =  F_asmb/100
-        F_gdyn      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_GRE)
+        F_gdyn      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_GRE)
         F_gdyn2[jfs:jfe+1]  =  F_gdyn/100
-        F_adyn      = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_ANT)
+        F_adyn      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_ANT)
         F_adyn2[jfs:jfe+1]  =  F_adyn/100
 
         del(f_ic, lat_ic, lon_ic)
@@ -156,7 +171,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         lon_gw     = f_gw.longitude
         finger_gw  = f_gw.GROUND
         #finger_gw@_FillValue = 0
-        F_gw       = misc.finger1D(nl.LOC_FP[0], nl.LOC_FP[1], lat_gw, lon_gw, finger_gw)
+        F_gw       = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_gw, lon_gw, finger_gw)
         F_gw2[jfs:jfe+1]  =  F_gw[ifs:ife+1]/100
 
         del(f_gw)
@@ -297,13 +312,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         else:
             SCE_loc = SCE
 
-        if nl.LOC:
+        if nl.REG:
             if nl.ODYN == 'KNMI':
-                X_Of = odyn.odyn_loc(SCE_loc, MOD, DIR_O, DIR_OG, nl.LOC, 
+                X_Of = odyn.odyn_loc(SCE_loc, MOD, DIR_O, DIR_OG, ODSL_REG, 
                                      ref_steric, ye, N, ys, nl.GAM, NormDT, 
                                      nl.LowPass)
             elif nl.ODYN in ['CMIP5', 'CMIP6']:                   
-                X_Of = odyn.odyn_cmip(SCE_loc, ROOT, nl.LOC, ref_steric, ye, N, 
+                X_Of = odyn.odyn_cmip(SCE_loc, ROOT, ODSL_REG, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, 
                                       nl.BiasCorr, nl.ODSL_LIST)
         else:
@@ -314,7 +329,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                 X_Of = odyn.odyn_glob_ipcc(SCE_loc, DIR_IPCC, N, nb_y2, nl.GAM, NormDT)
                 
             elif nl.ODYN in ['CMIP5', 'CMIP6']:
-                X_Of = odyn.odyn_cmip(SCE_loc, ROOT, nl.LOC, ref_steric, ye, N, 
+                X_Of = odyn.odyn_cmip(SCE_loc, ROOT, False, ref_steric, ye, N, 
                                       ys, nl.GAM, NormDT, nl.LowPass, 
                                       nl.BiasCorr, nl.ODSL_LIST)
 
@@ -336,7 +351,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             X_tot = X_Of[0, :, :]
 
         if nl.SaveAllSamples:
-            if nl.LOC:
+            if nl.REG:
                 X_all[comp,:,:] = X_Of[1, :, ind_d].swapaxes(0,1)
                 comp            = comp + 1
                 X_all[comp,:,:] = X_Of[2, :, ind_d].swapaxes(0,1)
@@ -880,7 +895,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     OUT_ds.attrs['options'] = (
     "Computations were done with the following options:: " +
-    f"Local computations? {nl.LOC}" +
+    f"Local computations? {bool(nl.REG)}" +
     f", include Inverse Barometer effect: {nl.IBarE}" +
     f", GMST option: {nl.TEMP}" +
     f", Greenland SMB and dynamics is: {nl.GRE}" +
@@ -901,6 +916,8 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     f", decompose the total sea level into its contributors: {nl.Decomp}" +
     f", filter stero-dynamics and GMST with a polynomial fit: {nl.LowPass}" +
     f", interpolate backward to 1995: {nl.InterpBack}")
+    
+    
     
     OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
     'Probabilistic Sea Level Projection code version ' + str(VER)
