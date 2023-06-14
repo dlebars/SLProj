@@ -604,11 +604,11 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             
         elif nl.ANT_DYN == 'VDL23_AS':
             cal_reg = 'AMUN'
-            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N, cal_reg)
+            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N, cal_reg, 'noCAS', 'usual')
         
         elif nl.ANT_DYN == 'VDL23_AA':
             cal_reg = 'SU'
-            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N, cal_reg)
+            X_ant = ant.ant_dyn_vdl23(ROOT, SCE, N, cal_reg, False, 'usual')
         
         # Add the conribution from 1995 to 2006
         if nl.ANT_DYN in ['KNMI23']:

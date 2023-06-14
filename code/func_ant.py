@@ -302,14 +302,26 @@ def ant_ar6(TIME_loc, a1_up, a1_lo, sce, NormD, ANT_DYN):
     
     return X_ant
 
-def ant_dyn_vdl23(ROOT, SCE, N, cal_reg, select_best=False):
+def ant_dyn_vdl23(ROOT, SCE, N, cal_reg, select, ref_per):
     # Use projections from van der Linden et al. 2023
+    # Options:
+    # cal_reg: The region used to calibrate basal melt sensitivity to increased 
+    #          ocean temperature temperature
+    #         'AMUN' for Amundsen Sea, 'SU' for full Antarctica
+    # select: 'intersection' use only four climate models also selected for 
+    #         ODSL in KNMI23
+    #         'best10pc' for the 10% of best performing models over the 
+    #         historical period
+    #         'noCAS' removed the CAS-ESM2-0 climate model that is an outlier
+    # ref_per: 'usual' for 1986-2005
+    #          'present' for 2008-2028 complemented with observations 
+    #          from 1995 to 2018
     
     path_vdl = f"{ROOT}/DataAntarctica_vdl/"
-
-    vdl_ds = xr.open_dataset(f"{path_vdl}slr_{cal_reg}calibrated_quadM_thetao_merged_biasadj_shelfbasedepth_historical+{SCE}_1850-2100.nc")
+    opt1 = 'calibrated_quadM'
+    opt2 = '_thetao_merged_biasadj_shelfbasedepth'
+    vdl_ds = xr.open_dataset(f"{path_vdl}slr_{cal_reg}{opt1}{opt2}_historical+{SCE}_1850-2100.nc")
     vdl_ds = vdl_ds.rename_vars({"__xarray_dataarray_variable__":"AA_dyn"})
-
     vdl_da = vdl_ds.AA_dyn.sel(region = "SU")
     
     # Convert from m to cm
@@ -317,26 +329,33 @@ def ant_dyn_vdl23(ROOT, SCE, N, cal_reg, select_best=False):
     
     # For one model values in 2100 are 0
     vdl_da.loc[:,'CAMS-CSM1-0', 2100] = vdl_da.loc[:,'CAMS-CSM1-0', 2099]
+    
+    if select == 'intersection':
+        vdl_da = vdl_da.sel(model=['EC-Earth3', 'INM-CM4-8', 'NorESM2-MM', 'MPI-ESM1-2-LR'])
+    
     vdl_da = vdl_da.stack(model_pairs=['model', 'ism'])
 
-    if select_best:
+    if select == 'best10pc':
         # Select the best 10% of model pairs
         # Only works for Amundsen Sea calibration
-        aa_t10 = pd.read_csv(f"{path_vdl}/top10pct_models_{cal_reg}calibrated_quadM_shelfbasedepth.txt", 
+        aa_t10 = pd.read_csv(f"{path_vdl}top10pct_models_{cal_reg}{opt1}_shelfbasedepth.txt", 
                              names = ["ESM", "ISM"],
                              delim_whitespace=True)
         na = np.transpose(np.array(aa_t10))
         mi = list(zip(*na))
         vdl_da = vdl_da.sel(model_pairs=mi )
+        
+    elif select == 'noCAS':
+        vdl_da.loc[:,'CAS-ESM2-0'] = np.nan
     
     vdl_da = vdl_da.dropna(dim="model_pairs")
 
-    if cal_reg == 'SU':
+    if ref_per == 'usual':
         # Use the usual reference period
         vdl_da = vdl_da - vdl_da.sel(year=slice(1986,2005)).mean(dim="year")
         vdl_da = vdl_da.sel(year=slice(2006,2100))
         
-    elif cal_reg == 'AMUN':
+    elif ref_per == 'present':
         # Take a later reference period
         vdl_da = vdl_da - vdl_da.sel(year=slice(2008,2028)).mean(dim="year")
         vdl_da = vdl_da.sel(year=slice(2006,2100))

@@ -5,9 +5,9 @@
 # INFO: Set to true to get more info in output
 # LastYear: Last year of the computation 2100 or 2125.
 # LOC: If local give either the box coordinates [lat_N, lat_S, lon_W, lon_E] or
-# a polygon that will be used with regionmask for ocean
-# dynamics averaging. Otherwise False for global sea level projections.
-# Original box from KNMI14: 51-60N, -3.5,7.5E
+#      a polygon that will be used with regionmask for ocean
+#      dynamics averaging. Otherwise False for global sea level projections.
+#      Original box from KNMI14: 51-60N, -3.5,7.5E
 # For local projections the fingerprint location is also used:
 # LOC_FP = [lat, lon] (Point where the fingerprints are read)
 # IBarE: If True, include the inverse barometer effect, only used for local 
