@@ -58,10 +58,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.REG == 'Netherlands':
             ODSL_REG = [[2.5, 53], [3.3, 51.5], [4.25, 52.25], [4.75, 53.3], 
                         [5.5, 53.6], [7, 53.75], [7, 55], [4, 54.5]]
-            LOC_FP = [53, 5] 
+            LOC_FP = [5, 53] 
         elif nl.REG == 'KNMI14':
             ODSL_REG = [60, 51, -3.5, 7.5]
-            LOC_FP = [53, 5]
+            LOC_FP = [5, 53]
 
     else:
         if nl.ODYN == 'KNMI':
@@ -145,7 +145,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # Read fingerprint for Glaciers and Ice Caps
         f_gic = xr.open_dataset(DIR_F+'Relative_GLACIERS_reg.nc', \
                                      decode_times=False)
-        F_gic = misc.finger1D(LOC_FP[0], LOC_FP[1], f_gic.latitude, f_gic.longitude, 
+        F_gic = misc.finger1D(LOC_FP[1], LOC_FP[0], f_gic.latitude, f_gic.longitude, 
                               f_gic.RSL)
         F_gic2[jfs:jfe+1] =  F_gic[ifs:ife+1]/100 # Convert from % to fraction
 
@@ -154,13 +154,13 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         f_ic        = xr.open_dataset(DIR_F+'Relative_icesheets_reg.nc')
         lat_ic      = f_ic.latitude #tofloat?
         lon_ic      = f_ic.longitude
-        F_gsmb      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_GRE)
+        F_gsmb      = misc.finger1D(LOC_FP[1], LOC_FP[0], lat_ic, lon_ic, f_ic.SMB_GRE)
         F_gsmb2[jfs:jfe+1]  =  F_gsmb/100
-        F_asmb      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.SMB_ANT)
+        F_asmb      = misc.finger1D(LOC_FP[1], LOC_FP[0], lat_ic, lon_ic, f_ic.SMB_ANT)
         F_asmb2[jfs:jfe+1]  =  F_asmb/100
-        F_gdyn      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_GRE)
+        F_gdyn      = misc.finger1D(LOC_FP[1], LOC_FP[0], lat_ic, lon_ic, f_ic.DYN_GRE)
         F_gdyn2[jfs:jfe+1]  =  F_gdyn/100
-        F_adyn      = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_ic, lon_ic, f_ic.DYN_ANT)
+        F_adyn      = misc.finger1D(LOC_FP[1], LOC_FP[0], lat_ic, lon_ic, f_ic.DYN_ANT)
         F_adyn2[jfs:jfe+1]  =  F_adyn/100
 
         del(f_ic, lat_ic, lon_ic)
@@ -171,7 +171,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         lon_gw     = f_gw.longitude
         finger_gw  = f_gw.GROUND
         #finger_gw@_FillValue = 0
-        F_gw       = misc.finger1D(LOC_FP[0], LOC_FP[1], lat_gw, lon_gw, finger_gw)
+        F_gw       = misc.finger1D(LOC_FP[1], LOC_FP[0], lat_gw, lon_gw, finger_gw)
         F_gw2[jfs:jfe+1]  =  F_gw[ifs:ife+1]/100
 
         del(f_gw)
@@ -919,8 +919,9 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     
     if nl.REG:
         OUT_ds.attrs['Region name'] = nl.REG
-        OUT_ds.attrs['ODSL region'] = ODSL_REG
-        OUT_ds.attrs['Fingerprint location'] = LOC_FP
+        OUT_ds.coords['coordinates'] = ['longitude', 'latitude']
+        OUT_ds['ODSL_region'] = (('points', 'coordinates'), ODSL_REG)
+        OUT_ds['Fingerprint_location'] = ('coordinates', LOC_FP)
     
     OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
     'Probabilistic Sea Level Projection code version ' + str(VER)
