@@ -893,7 +893,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
                                           'components')
         OUT_ds['decomp'] = X_Decomp_da
     
-    OUT_ds.attrs['options'] = (
+    OUT_ds.attrs['Options'] = (
     "Computations were done with the following options:: " +
     f"Local computations? {bool(nl.REG)}" +
     f", include Inverse Barometer effect: {nl.IBarE}" +
@@ -917,7 +917,10 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     f", filter stero-dynamics and GMST with a polynomial fit: {nl.LowPass}" +
     f", interpolate backward to 1995: {nl.InterpBack}")
     
-    
+    if nl.REG:
+        OUT_ds.attrs['Region name'] = nl.REG
+        OUT_ds.attrs['ODSL region'] = ODSL_REG
+        OUT_ds.attrs['Fingerprint location'] = LOC_FP
     
     OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
     'Probabilistic Sea Level Projection code version ' + str(VER)
