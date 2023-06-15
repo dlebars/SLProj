@@ -55,13 +55,31 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # the regionmask package.
         # Also define the location (latitude, longitude) where the fingerprints 
         # are read. There is no spatial averaging possible for the fingerprints.
+        
         if nl.REG == 'Netherlands':
             ODSL_REG = [[2.5, 53], [3.3, 51.5], [4.25, 52.25], [4.75, 53.3], 
                         [5.5, 53.6], [7, 53.75], [7, 55], [4, 54.5]]
-            LOC_FP = [5, 53] 
+            LOC_FP = [5, 53]
+            # GIA from ICE6G for 6 tide gauges: 0.037 cm/year
+            gia_reg = 0.037
+            
         elif nl.REG == 'KNMI14':
             ODSL_REG = [60, 51, -3.5, 7.5]
             LOC_FP = [5, 53]
+            # There was no GIA included in KNMI14
+            gia_reg = 0
+            
+        elif nl.REG == 'Bonaire':
+            ODSL_REG = [13, 11, -70, -67]
+            LOC_FP = [-68.3, 12.2]
+            # Based on ICE6G map
+            gia_reg = 0.014
+            
+        elif nl.REG == 'Saba':
+            ODSL_REG = [19, 16, -64, -62]
+            LOC_FP = [-63.2, 17.6]
+            # Based on ICE6G map
+            gia_reg = 0.011
 
     else:
         if nl.ODYN == 'KNMI':
@@ -728,11 +746,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.INFO:
             print("### Glacial Isostatic Adjustment ##########################") 
         
-        #!!! This process only works for the Dutch coast !!!
-        # Total subisdence from Deltares: 0.045
-        # GIA from ICE6G for 6 tide gauges: 0.037
-        
-        gia = (TIME2-1995) * 0.037 
+        gia = (TIME2-1995) * gia_reg
         X_gia = np.repeat(gia[np.newaxis, :], repeats=N, axis=0)
                 
         X_gia_perc += np.concatenate( (np.percentile(X_gia, Perc, axis=0), 
@@ -918,9 +932,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
     f", interpolate backward to 1995: {nl.InterpBack}")
     
     if nl.REG:
-        OUT_ds.attrs['Region name'] = nl.REG
+        OUT_ds.attrs['region_name'] = nl.REG
         OUT_ds.coords['coordinates'] = ['longitude', 'latitude']
-        OUT_ds['ODSL_region'] = (('points', 'coordinates'), ODSL_REG)
+        if len(ODSL_REG) == 4:
+            OUT_ds['ODSL_region'] = (('box_coordinates'), ODSL_REG)
+        else:
+            OUT_ds['ODSL_region'] = (('points', 'coordinates'), ODSL_REG)
         OUT_ds['Fingerprint_location'] = ('coordinates', LOC_FP)
     
     OUT_ds.attrs['source_file'] = 'This NetCDF file was built from the ' + \
