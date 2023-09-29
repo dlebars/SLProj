@@ -746,8 +746,15 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         if nl.INFO:
             print("### Glacial Isostatic Adjustment ##########################") 
         
-        gia = (TIME2-1995) * gia_reg
-        X_gia = np.repeat(gia[np.newaxis, :], repeats=N, axis=0)
+        if nl.REG:
+            gia = gia_reg
+        else:
+            # Apply global GIA estimate
+            gia = 0.03
+        
+        gia_ts = (TIME2-1995) * gia
+            
+        X_gia = np.repeat(gia_ts[np.newaxis, :], repeats=N, axis=0)
                 
         X_gia_perc += np.concatenate( (np.percentile(X_gia, Perc, axis=0), 
                                        X_gia.mean(axis=0, keepdims=True)), axis=0)

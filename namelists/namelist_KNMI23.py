@@ -1,6 +1,6 @@
 INFO = True
 LastYear = 2100 # Last year of the computation 2100 or 2125
-REG = 'Saba' #'Netherlands'
+REG = False #'Netherlands', 'Bonaire', 'Saba'
 IBarE = False
 TEMP = 'AR6'
 GRE = 'IPCC'
