@@ -53,7 +53,7 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
         # [lat_N, lat_S, lon_W, lon_E] that is 
         # selected with .sel option of xarray of a polygone that will be read with
         # the regionmask package.
-        # Also define the location (latitude, longitude) where the fingerprints 
+        # Also define the location (longitude, latitude) where the fingerprints 
         # are read. There is no spatial averaging possible for the fingerprints.
         
         if nl.REG == 'Netherlands':
@@ -80,6 +80,12 @@ def main(VER, N, MIN_IT, er, namelist_name, SCE):
             LOC_FP = [-63.2, 17.6]
             # Based on ICE6G map
             gia_reg = 0.011
+            
+        elif nl.REG == 'Suriname':
+            ODSL_REG = [8, 6, -57, -54]
+            LOC_FP = [-55.5, 6]
+            # Based on ICE6G map
+            gia_reg = -0.015
 
     else:
         if nl.ODYN == 'KNMI':
